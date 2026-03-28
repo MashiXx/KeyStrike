@@ -664,6 +664,14 @@ body {
   min-height: 3rem;
 }
 
+.typing-input {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
 .char {
   display: inline-block;
   transition: color 0.1s, background 0.1s;

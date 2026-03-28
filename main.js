@@ -63,6 +63,7 @@
     btnMenu: $('btn-menu'),
   };
 
+  const typingInput = $('typing-input');
   let net = null;
   let game = null;
   let selectedLoadout = 'warrior';
@@ -1044,6 +1045,9 @@
     renderSentence();
     updateHUD();
     initAudio();
+    // Focus hidden input for typing (IME support)
+    typingInput.value = '';
+    typingInput.focus();
   }
 
   // ====== TYPING ======
@@ -1120,6 +1124,8 @@
   function endGame(result) {
     ui.sabotageOverlay.style.display = 'none';
     ui.overloadBtn.style.display = 'none';
+    typingInput.blur();
+    typingInput.value = '';
 
     ui.gameoverTitle.textContent = result === 'win' ? 'VICTORY' : 'DEFEAT';
     ui.gameoverTitle.className = result === 'win' ? 'win' : 'lose';
@@ -1132,36 +1138,71 @@
     setTimeout(() => showScreen('gameover'), 1500);
   }
 
-  // ====== INPUT ======
+  // ====== INPUT (IME-compatible for Vietnamese) ======
+  let composing = false;
+
+  // Keep input focused during game
+  function focusInput() {
+    if (game && game.active) typingInput.focus();
+  }
+
+  document.addEventListener('click', focusInput);
+
+  // Track IME composition state
+  typingInput.addEventListener('compositionstart', () => { composing = true; });
+  typingInput.addEventListener('compositionend', () => {
+    composing = false;
+    // Process the composed result
+    processInputValue();
+  });
+
+  // Handle normal (non-IME) input
+  typingInput.addEventListener('input', () => {
+    if (composing) return; // wait for compositionend
+    processInputValue();
+  });
+
+  function processInputValue() {
+    if (!game || !game.active) { typingInput.value = ''; return; }
+    initAudio();
+
+    const val = typingInput.value;
+    typingInput.value = '';
+    if (!val) return;
+
+    // Process each character from the input (usually 1, but IME can produce multi-char)
+    for (const char of val) {
+      handleTypedChar(char);
+    }
+  }
+
+  // Overload on Ctrl+Space (since Space may be part of sentence)
   document.addEventListener('keydown', (e) => {
     if (!game || !game.active) return;
 
-    // Overload trigger on Space when energy full
-    if (e.key === ' ' && game.self.energy >= 100) {
+    // Overload: Ctrl+Space or F1
+    if ((e.key === ' ' && e.ctrlKey) || e.key === 'F1') {
       e.preventDefault();
-      const projectiles = game.triggerOverload();
-      if (projectiles) {
-        sfxOverload();
-        // Fire our projectiles left -> right
-        for (const p of projectiles) {
-          setTimeout(() => {
-            spawnProjectile('left', p.type, p.damage, false);
-            sfxLaunch();
-          }, p.delay);
+      if (game.self.energy >= 100) {
+        const projectiles = game.triggerOverload();
+        if (projectiles) {
+          sfxOverload();
+          for (const p of projectiles) {
+            setTimeout(() => {
+              spawnProjectile('left', p.type, p.damage, false);
+              sfxLaunch();
+            }, p.delay);
+          }
+          net.send({ type: 'overload', projectiles });
+          updateHUD();
         }
-        net.send({ type: 'overload', projectiles });
-        updateHUD();
       }
       return;
     }
+  });
 
-    // Only single printable characters for typing
-    if (e.ctrlKey || e.altKey || e.metaKey) return;
-    if (e.key.length !== 1) return;
-    e.preventDefault();
-    initAudio();
-
-    const result = game.processKey(e.key);
+  function handleTypedChar(char) {
+    const result = game.processKey(char);
 
     switch (result.result) {
       case 'correct':
@@ -1181,10 +1222,8 @@
 
       case 'sentence-complete': {
         sfxLaunch();
-        // Spawn projectile from left (self) to right (opponent)
         spawnProjectile('left', result.projectileType, result.damage, result.isCritical);
 
-        // Send attack to opponent
         net.send({
           type: 'attack',
           projectileType: result.projectileType,
@@ -1199,7 +1238,7 @@
         break;
       }
     }
-  });
+  }
 
   // ====== BUTTON HANDLERS ======
 

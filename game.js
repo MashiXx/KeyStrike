@@ -1,17 +1,36 @@
 // KeyStrike - Game Logic
-// Combat system, damage calculation, sentence generation
+// Castle siege combat system with projectiles, units, shields, overload, sabotage
+
+// Projectile type definitions
+const PROJECTILE_TYPES = {
+  weakFruit: { name: 'Weak Fruit', baseDamage: 15, speed: 6, color: '#8bc34a', radius: 8, emoji: 'apple', trail: false },
+  fruit:     { name: 'Fruit',      baseDamage: 25, speed: 7, color: '#ff9100', radius: 10, emoji: 'orange', trail: false },
+  stone:     { name: 'Stone',      baseDamage: 45, speed: 4, color: '#9e9e9e', radius: 14, emoji: 'rock', trail: true },
+  rocket:    { name: 'Rocket',     baseDamage: 70, speed: 8, color: '#ff1744', radius: 12, emoji: 'rocket', trail: true, explosion: true },
+  bomb:      { name: 'Bomb',       baseDamage: 90, speed: 3, color: '#9c27b0', radius: 16, emoji: 'bomb', trail: true, explosion: true, aoe: true },
+  freeze:    { name: 'Freeze',     baseDamage: 30, speed: 7, color: '#00e5ff', radius: 10, emoji: 'freeze', trail: true, sabotage: 'freeze' },
+};
+
+// Loadout bonuses
+const LOADOUTS = {
+  warrior:  { damageMult: 1.2, shieldMult: 1.0, sabotageMult: 1.0 },
+  guardian: { damageMult: 1.0, shieldMult: 1.3, sabotageMult: 1.0 },
+  saboteur: { damageMult: 1.0, shieldMult: 1.0, sabotageMult: 1.5 },
+};
 
 class Game {
-  constructor(seed) {
+  constructor(seed, loadout = 'warrior') {
     this.seed = seed;
     this.rng = this._createRNG(seed);
+    this.loadout = LOADOUTS[loadout] || LOADOUTS.warrior;
+    this.loadoutName = loadout;
 
-    // Player state
+    // Castle state
     this.self = this._createPlayerState();
     this.opponent = this._createPlayerState();
 
     // Typing state
-    this.sentences = this._generateSentences(50);
+    this.sentences = this._generateSentences(80);
     this.currentSentenceIndex = 0;
     this.currentCharIndex = 0;
     this.sentenceStartTime = 0;
@@ -20,30 +39,37 @@ class Game {
     this.sentenceErrors = 0;
     this.sentenceChars = 0;
 
-    // Combo system
+    // Combo: resets on slow typing or too many mistakes
     this.combo = 0;
-    this.lastCorrectTime = 0;
+    this.maxCombo = 0;
 
-    // Stun state
-    this.stunned = false;
-    this.stunEndTime = 0;
+    // Sabotage state (received from opponent)
+    this.sabotaged = false;
+    this.sabotageType = null;
+    this.sabotageEndTime = 0;
 
     // Game state
     this.active = false;
     this.winner = null;
 
     // Callbacks
-    this.onAttack = null;
-    this.onStun = null;
-    this.onGameOver = null;
+    this.onProjectile = null;   // (projectileType, damage, isCritical) => spawn animation
+    this.onOverload = null;     // () => overload barrage
+    this.onShieldGain = null;   // (amount) =>
+    this.onSabotage = null;     // (type, duration) =>
+    this.onUnitSpawn = null;    // (unitType) =>
+    this.onGameOver = null;     // ('win' | 'lose') =>
   }
 
   _createPlayerState() {
     return {
-      chaos: 0,        // 0-100, lose at 70
-      corruption: 0,   // 0-100, stun at 100
+      hp: 1000,
+      maxHp: 1000,
+      shield: 0,         // 0-100, absorbs damage
+      energy: 0,         // 0-100, triggers overload at 100
       accuracy: 100,
       speed: 0,
+      combo: 0,
       sentencesCompleted: 0,
     };
   }
@@ -93,9 +119,14 @@ class Game {
       "type like your life depends on it right now",
       "accuracy beats speed when the stakes rise",
       "every keystroke counts in this final battle",
-      "the screen fills with chaos as you falter",
+      "the castle walls crumble under heavy fire",
       "stay calm and keep typing through the storm",
       "your opponent is faster but you are smarter",
+      "launch the catapult and crush their fortress",
+      "defend your walls or face total destruction",
+      "the siege begins at dawn prepare your troops",
+      "arrows fly across the field like angry bees",
+      "stone by stone the enemy walls come crashing",
     ];
 
     const sentences = [];
@@ -114,13 +145,17 @@ class Game {
     this.sentenceStartTime = Date.now();
   }
 
-  // Process a keypress, returns { result, char }
-  // result: 'correct', 'error', 'sentence-complete', 'ignored' (if stunned)
+  // Process a keypress
   processKey(char) {
     if (!this.active || this.winner) return { result: 'ignored' };
-    if (this.stunned && Date.now() < this.stunEndTime) return { result: 'ignored' };
-    if (this.stunned && Date.now() >= this.stunEndTime) {
-      this.stunned = false;
+
+    // Check sabotage: if frozen, ignore input
+    if (this.sabotaged && this.sabotageType === 'freeze' && Date.now() < this.sabotageEndTime) {
+      return { result: 'ignored' };
+    }
+    if (this.sabotaged && Date.now() >= this.sabotageEndTime) {
+      this.sabotaged = false;
+      this.sabotageType = null;
     }
 
     const sentence = this.getCurrentSentence();
@@ -132,35 +167,74 @@ class Game {
     if (char === expected) {
       this.correctChars++;
       this.currentCharIndex++;
-      this._updateCombo(true);
+      this.combo++;
+      if (this.combo > this.maxCombo) this.maxCombo = this.combo;
 
-      // Check if sentence complete
+      // Energy gain from correct typing
+      this.self.energy = Math.min(100, this.self.energy + 1);
+
       if (this.currentCharIndex >= sentence.length) {
         return this._completeSentence();
       }
-
       return { result: 'correct', charIndex: this.currentCharIndex - 1 };
     } else {
-      // Wrong character
       this.sentenceErrors++;
-      this._updateCombo(false);
-      this._addCorruption(5);
+      // Combo breaks on too many errors (3+ in a sentence)
+      if (this.sentenceErrors >= 3) this.combo = 0;
       this._updateAccuracy();
-
       return { result: 'error', charIndex: this.currentCharIndex };
     }
   }
 
   _completeSentence() {
     const elapsed = (Date.now() - this.sentenceStartTime) / 1000;
+    const sentenceAcc = this._getSentenceAccuracy();
+
     this.self.speed = elapsed;
+    this.self.accuracy = this._getOverallAccuracy();
+    this.self.combo = this.combo;
     this.self.sentencesCompleted++;
-    this._updateAccuracy();
+
+    // Determine projectile type based on performance
+    const projType = this._getProjectileType(elapsed, sentenceAcc);
+    const projDef = PROJECTILE_TYPES[projType];
 
     // Calculate damage
-    const damage = this._calculateDamage(elapsed, this._getSentenceAccuracy());
-    const isCritical = this.combo >= 5 && this.rng() < 0.3;
-    const finalDamage = isCritical ? damage * 1.5 : damage;
+    const comboMult = this._getComboMultiplier();
+    let damage = projDef.baseDamage * comboMult * this.loadout.damageMult;
+
+    // Critical hit chance (higher with combo)
+    const critChance = Math.min(0.05 + this.combo * 0.02, 0.4);
+    const isCritical = this.rng() < critChance;
+    if (isCritical) damage *= 1.8;
+
+    damage = Math.round(damage);
+
+    // Perfect sentence grants shield
+    let shieldGain = 0;
+    if (sentenceAcc >= 100) {
+      shieldGain = Math.round(15 * this.loadout.shieldMult);
+      this.self.shield = Math.min(100, this.self.shield + shieldGain);
+      if (this.onShieldGain) this.onShieldGain(shieldGain);
+    }
+
+    // Check for special projectile triggers
+    let sabotageType = null;
+    if (projDef.sabotage) {
+      sabotageType = projDef.sabotage;
+    } else if (this.combo >= 10 && this.rng() < 0.2 * this.loadout.sabotageMult) {
+      // High combo can trigger sabotage
+      sabotageType = this.rng() < 0.5 ? 'shake' : 'blur';
+    }
+
+    // Spawn a unit every 3 sentences
+    if (this.self.sentencesCompleted % 3 === 0) {
+      const unitType = this.combo >= 8 ? 'knight' : this.combo >= 4 ? 'soldier' : 'peasant';
+      if (this.onUnitSpawn) this.onUnitSpawn(unitType);
+    }
+
+    // Energy bonus for fast completion
+    if (elapsed < 3) this.self.energy = Math.min(100, this.self.energy + 10);
 
     // Advance to next sentence
     this.currentSentenceIndex++;
@@ -169,38 +243,43 @@ class Game {
     this.sentenceChars = 0;
     this.sentenceStartTime = Date.now();
 
-    // Reset corruption on sentence complete
-    this.self.corruption = Math.max(0, this.self.corruption - 20);
-
     return {
       result: 'sentence-complete',
-      damage: finalDamage,
-      speed: elapsed,
-      accuracy: this.self.accuracy,
+      projectileType: projType,
+      damage,
       isCritical,
       combo: this.combo,
+      comboMult,
+      speed: elapsed,
+      accuracy: sentenceAcc,
+      shieldGain,
+      sabotageType,
     };
   }
 
-  _calculateDamage(timeSeconds, accuracy) {
-    const baseDamage = 10;
+  _getProjectileType(time, accuracy) {
+    // Special projectiles (rare)
+    if (time < 2 && accuracy >= 100 && this.combo >= 8) {
+      return this.rng() < 0.3 ? 'bomb' : (this.rng() < 0.5 ? 'freeze' : 'rocket');
+    }
+    // Rocket: very fast + high accuracy
+    if (time < 3 && accuracy >= 95) return 'rocket';
+    // Stone: fast
+    if (time < 5 && accuracy >= 85) return 'stone';
+    // Fruit: normal
+    if (accuracy >= 70) return 'fruit';
+    // Weak fruit: slow or many mistakes
+    return 'weakFruit';
+  }
 
-    let speedMult;
-    if (timeSeconds < 2) speedMult = 2.0;
-    else if (timeSeconds < 4) speedMult = 1.5;
-    else if (timeSeconds < 6) speedMult = 1.0;
-    else speedMult = 0.7;
-
-    let accMult;
-    if (accuracy >= 100) accMult = 1.5;
-    else if (accuracy >= 95) accMult = 1.2;
-    else if (accuracy >= 90) accMult = 1.0;
-    else accMult = 0.8;
-
-    // Combo bonus
-    const comboMult = 1 + Math.min(this.combo, 10) * 0.05;
-
-    return baseDamage * speedMult * accMult * comboMult;
+  _getComboMultiplier() {
+    // Combo range: 1x to 5x
+    if (this.combo <= 1) return 1;
+    if (this.combo <= 3) return 1.5;
+    if (this.combo <= 6) return 2;
+    if (this.combo <= 10) return 3;
+    if (this.combo <= 15) return 4;
+    return 5;
   }
 
   _getSentenceAccuracy() {
@@ -208,60 +287,86 @@ class Game {
     return ((this.sentenceChars - this.sentenceErrors) / this.sentenceChars) * 100;
   }
 
+  _getOverallAccuracy() {
+    if (this.totalChars === 0) return 100;
+    return Math.round((this.correctChars / this.totalChars) * 100);
+  }
+
   _updateAccuracy() {
-    if (this.totalChars === 0) {
-      this.self.accuracy = 100;
-    } else {
-      this.self.accuracy = Math.round((this.correctChars / this.totalChars) * 100);
-    }
+    this.self.accuracy = this._getOverallAccuracy();
   }
 
-  _updateCombo(correct) {
-    if (correct) {
-      this.combo++;
-      this.lastCorrectTime = Date.now();
-    } else {
-      this.combo = 0;
+  // Trigger overload: fire rapid barrage
+  triggerOverload() {
+    if (this.self.energy < 100 || !this.active) return null;
+    this.self.energy = 0;
+    // Fire 5 rapid projectiles
+    const projectiles = [];
+    for (let i = 0; i < 5; i++) {
+      const types = ['rocket', 'stone', 'stone', 'fruit', 'fruit'];
+      const type = types[i];
+      const def = PROJECTILE_TYPES[type];
+      const damage = Math.round(def.baseDamage * 0.7 * this.loadout.damageMult);
+      projectiles.push({ type, damage, isCritical: false, delay: i * 300 });
     }
+    return projectiles;
   }
 
-  _addCorruption(amount) {
-    this.self.corruption = Math.min(100, this.self.corruption + amount);
-
-    // Stun check
-    if (this.self.corruption >= 100) {
-      this.stunned = true;
-      const stunDuration = 1000 + this.rng() * 1000; // 1-2 seconds
-      this.stunEndTime = Date.now() + stunDuration;
-      this.self.corruption = 0;
-      if (this.onStun) this.onStun(stunDuration);
+  // Apply incoming damage (from opponent's projectile)
+  receiveDamage(damage, sabotageType = null) {
+    // Shield absorbs damage
+    if (this.self.shield > 0) {
+      const absorbed = Math.min(this.self.shield, damage * 0.5);
+      damage -= absorbed;
+      this.self.shield = Math.max(0, this.self.shield - absorbed * 2);
     }
-  }
 
-  // Apply damage from opponent's attack
-  receiveDamage(damage) {
-    this.self.chaos = Math.min(100, this.self.chaos + damage);
+    this.self.hp = Math.max(0, this.self.hp - damage);
 
-    // Check lose condition: chaos > 70
-    if (this.self.chaos >= 70) {
+    // Apply sabotage if any
+    if (sabotageType) {
+      this.sabotaged = true;
+      this.sabotageType = sabotageType;
+      const duration = sabotageType === 'freeze' ? 2000 : 3000;
+      this.sabotageEndTime = Date.now() + duration * this.loadout.sabotageMult;
+      if (this.onSabotage) this.onSabotage(sabotageType, duration);
+    }
+
+    // Check lose
+    if (this.self.hp <= 0) {
+      this.self.hp = 0;
       this.active = false;
       this.winner = 'opponent';
       if (this.onGameOver) this.onGameOver('lose');
     }
+
+    return damage;
   }
 
-  // Update opponent state from network
+  // Update opponent display state
   updateOpponent(state) {
-    if (state.chaos !== undefined) this.opponent.chaos = state.chaos;
-    if (state.corruption !== undefined) this.opponent.corruption = state.corruption;
+    if (state.hp !== undefined) this.opponent.hp = state.hp;
+    if (state.shield !== undefined) this.opponent.shield = state.shield;
+    if (state.energy !== undefined) this.opponent.energy = state.energy;
     if (state.accuracy !== undefined) this.opponent.accuracy = state.accuracy;
     if (state.speed !== undefined) this.opponent.speed = state.speed;
+    if (state.combo !== undefined) this.opponent.combo = state.combo;
   }
 
-  // Opponent lost (we win)
   opponentLost() {
     this.active = false;
     this.winner = 'self';
     if (this.onGameOver) this.onGameOver('win');
+  }
+
+  getState() {
+    return {
+      hp: this.self.hp,
+      shield: this.self.shield,
+      energy: this.self.energy,
+      accuracy: this.self.accuracy,
+      speed: this.self.speed,
+      combo: this.self.combo,
+    };
   }
 }

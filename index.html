@@ -11,7 +11,30 @@
   <div id="menu-screen" class="screen active">
     <div class="menu-container">
       <h1 class="game-title">KEY<span class="accent">STRIKE</span></h1>
-      <p class="subtitle">1v1 Typing Battle</p>
+      <p class="subtitle">Castle Siege Typing Battle</p>
+
+      <!-- Skill Loadout Selection -->
+      <div class="loadout-section">
+        <h3>Choose Loadout</h3>
+        <div class="loadout-options">
+          <button class="loadout-btn selected" data-loadout="warrior">
+            <span class="loadout-icon">&#9876;</span>
+            <span class="loadout-name">Warrior</span>
+            <span class="loadout-desc">+20% damage</span>
+          </button>
+          <button class="loadout-btn" data-loadout="guardian">
+            <span class="loadout-icon">&#9961;</span>
+            <span class="loadout-name">Guardian</span>
+            <span class="loadout-desc">+30% shield</span>
+          </button>
+          <button class="loadout-btn" data-loadout="saboteur">
+            <span class="loadout-icon">&#9763;</span>
+            <span class="loadout-name">Saboteur</span>
+            <span class="loadout-desc">Stronger debuffs</span>
+          </button>
+        </div>
+      </div>
+
       <div class="menu-buttons">
         <button id="btn-create" class="btn btn-primary">Create Room</button>
         <div class="join-group">
@@ -26,14 +49,24 @@
   <!-- Lobby Screen -->
   <div id="lobby-screen" class="screen">
     <div class="lobby-container">
-      <h2>Room: <span id="lobby-room-id" class="accent"></span></h2>
+      <h2>Room Created</h2>
       <div id="lobby-share" class="share-box">
-        <p>Share this with your opponent:</p>
-        <div class="share-link-row">
-          <input type="text" id="share-url" class="share-url" readonly>
-          <button id="btn-copy" class="btn btn-secondary btn-small">Copy</button>
+        <p>Send these to your opponent:</p>
+        <div class="share-item">
+          <label>Server URL</label>
+          <div class="share-link-row">
+            <input type="text" id="share-url" class="share-input" readonly>
+            <button id="btn-copy-url" class="btn btn-secondary btn-small">Copy</button>
+          </div>
         </div>
-        <p class="share-hint">Opponent opens this URL, enters the room code, and clicks Join</p>
+        <div class="share-item">
+          <label>Room Code</label>
+          <div class="share-link-row">
+            <input type="text" id="share-code" class="share-input share-code" readonly>
+            <button id="btn-copy-code" class="btn btn-secondary btn-small">Copy</button>
+          </div>
+        </div>
+        <p class="share-hint">Opponent opens the URL, enters the room code, and clicks Join</p>
       </div>
       <p id="lobby-status">Waiting for opponent...</p>
       <div id="lobby-ready" style="display:none;">
@@ -44,77 +77,77 @@
 
   <!-- Game Screen -->
   <div id="game-screen" class="screen">
-    <!-- Opponent Status (top) -->
-    <div id="opponent-area" class="player-area opponent-area">
-      <div class="player-info">
-        <span class="player-label">OPPONENT</span>
-        <div class="stats">
-          <span class="stat">SPD: <span id="opp-speed">0</span>s</span>
-          <span class="stat">ACC: <span id="opp-accuracy">100</span>%</span>
+    <!-- Battle Canvas (projectiles, castles, units, effects) -->
+    <canvas id="battle-canvas"></canvas>
+
+    <!-- HUD Overlay -->
+    <div id="hud">
+      <!-- Left player (self) -->
+      <div class="hud-side hud-left">
+        <span class="hud-label">YOUR CASTLE</span>
+        <div class="hp-bar">
+          <div id="self-hp-fill" class="hp-fill hp-fill-self"></div>
+          <span id="self-hp-text" class="hp-text">1000 / 1000</span>
+        </div>
+        <div class="hud-stats">
+          <span>SPD: <span id="self-speed">0</span>s</span>
+          <span>ACC: <span id="self-accuracy">100</span>%</span>
+          <span>CMB: <span id="self-combo">0</span>x</span>
+        </div>
+        <div class="hud-meters">
+          <div class="mini-meter">
+            <label>ENERGY</label>
+            <div class="mini-bar"><div id="self-energy-fill" class="mini-fill energy-fill"></div></div>
+          </div>
+          <div class="mini-meter">
+            <label>SHIELD</label>
+            <div class="mini-bar"><div id="self-shield-fill" class="mini-fill shield-fill"></div></div>
+          </div>
         </div>
       </div>
-      <div class="meter-group">
-        <div class="meter">
-          <label>CHAOS</label>
-          <div class="meter-bar">
-            <div id="opp-chaos-fill" class="meter-fill chaos-fill"></div>
-          </div>
-          <span id="opp-chaos-val" class="meter-val">0%</span>
+
+      <!-- Right player (opponent) -->
+      <div class="hud-side hud-right">
+        <span class="hud-label">ENEMY CASTLE</span>
+        <div class="hp-bar">
+          <div id="opp-hp-fill" class="hp-fill hp-fill-opp"></div>
+          <span id="opp-hp-text" class="hp-text">1000 / 1000</span>
         </div>
-        <div class="meter">
-          <label>CORRUPTION</label>
-          <div class="meter-bar">
-            <div id="opp-corruption-fill" class="meter-fill corruption-fill"></div>
+        <div class="hud-stats">
+          <span>SPD: <span id="opp-speed">0</span>s</span>
+          <span>ACC: <span id="opp-accuracy">100</span>%</span>
+          <span>CMB: <span id="opp-combo">0</span>x</span>
+        </div>
+        <div class="hud-meters">
+          <div class="mini-meter">
+            <label>ENERGY</label>
+            <div class="mini-bar"><div id="opp-energy-fill" class="mini-fill energy-fill"></div></div>
           </div>
-          <span id="opp-corruption-val" class="meter-val">0%</span>
+          <div class="mini-meter">
+            <label>SHIELD</label>
+            <div class="mini-bar"><div id="opp-shield-fill" class="mini-fill shield-fill"></div></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Typing Area (center) -->
+    <!-- Typing Area (bottom center overlay) -->
     <div id="typing-area">
       <div id="combo-display" class="combo-display" style="display:none;">
         <span id="combo-count"></span> COMBO
       </div>
       <div id="sentence-display" class="sentence-display"></div>
-      <div id="stun-overlay" class="stun-overlay" style="display:none;">
-        <span>STUNNED</span>
+      <div id="sabotage-overlay" class="sabotage-overlay" style="display:none;">
+        <span>SABOTAGED!</span>
+      </div>
+      <div id="overload-btn" class="overload-btn" style="display:none;">
+        Press SPACE for OVERLOAD!
       </div>
     </div>
 
     <!-- Countdown Overlay -->
     <div id="countdown-overlay" class="countdown-overlay" style="display:none;">
       <span id="countdown-text"></span>
-    </div>
-
-    <!-- Effects Layer -->
-    <div id="effects-layer" class="effects-layer"></div>
-
-    <!-- Player Status (bottom) -->
-    <div id="player-area" class="player-area self-area">
-      <div class="player-info">
-        <span class="player-label">YOU</span>
-        <div class="stats">
-          <span class="stat">SPD: <span id="self-speed">0</span>s</span>
-          <span class="stat">ACC: <span id="self-accuracy">100</span>%</span>
-        </div>
-      </div>
-      <div class="meter-group">
-        <div class="meter">
-          <label>CHAOS</label>
-          <div class="meter-bar">
-            <div id="self-chaos-fill" class="meter-fill chaos-fill"></div>
-          </div>
-          <span id="self-chaos-val" class="meter-val">0%</span>
-        </div>
-        <div class="meter">
-          <label>CORRUPTION</label>
-          <div class="meter-bar">
-            <div id="self-corruption-fill" class="meter-fill corruption-fill"></div>
-          </div>
-          <span id="self-corruption-val" class="meter-val">0%</span>
-        </div>
-      </div>
     </div>
   </div>
 

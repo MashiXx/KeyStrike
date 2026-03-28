@@ -73,6 +73,35 @@ body {
   text-transform: uppercase;
 }
 
+/* Player Name Input */
+.name-section {
+  margin-bottom: 1rem;
+}
+
+.name-input {
+  background: var(--bg-card);
+  border: 2px solid #333;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 0.65rem 1.25rem;
+  width: 260px;
+  text-align: center;
+  outline: none;
+  letter-spacing: 0.05em;
+  transition: border-color 0.2s;
+}
+
+.name-input:focus {
+  border-color: var(--accent);
+}
+
+.name-input::placeholder {
+  color: #555;
+  font-weight: 400;
+}
+
 /* Loadout Selection */
 .loadout-section {
   margin-bottom: 1.5rem;

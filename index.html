@@ -13,6 +13,11 @@
       <h1 class="game-title">KEY<span class="accent">STRIKE</span></h1>
       <p class="subtitle">Castle Siege Typing Battle</p>
 
+      <!-- Player Name -->
+      <div class="name-section">
+        <input type="text" id="input-player-name" class="name-input" placeholder="Enter your name" maxlength="16" autocomplete="off">
+      </div>
+
       <!-- Skill Loadout Selection -->
       <div class="loadout-section">
         <h3>Choose Loadout</h3>
@@ -114,7 +119,7 @@
     <div id="hud">
       <!-- Left player (self) -->
       <div class="hud-side hud-left">
-        <span class="hud-label">YOUR CASTLE</span>
+        <span class="hud-label" id="hud-self-name">YOUR CASTLE</span>
         <div class="hp-bar">
           <div id="self-hp-fill" class="hp-fill hp-fill-self"></div>
           <span id="self-hp-text" class="hp-text">1000 / 1000</span>
@@ -138,7 +143,7 @@
 
       <!-- Right player (opponent) -->
       <div class="hud-side hud-right">
-        <span class="hud-label">ENEMY CASTLE</span>
+        <span class="hud-label" id="hud-opp-name">ENEMY CASTLE</span>
         <div class="hp-bar">
           <div id="opp-hp-fill" class="hp-fill hp-fill-opp"></div>
           <span id="opp-hp-text" class="hp-text">1000 / 1000</span>

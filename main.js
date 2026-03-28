@@ -15,6 +15,7 @@
     btnCreate: $('btn-create'),
     btnJoin: $('btn-join'),
     inputRoomId: $('input-room-id'),
+    inputPlayerName: $('input-player-name'),
     menuStatus: $('menu-status'),
     lobbyRoomId: $('lobby-room-id'),
     lobbyStatus: $('lobby-status'),
@@ -40,6 +41,8 @@
     sabotageOverlay: $('sabotage-overlay'),
     overloadBtn: $('overload-btn'),
     // HUD
+    hudSelfName: $('hud-self-name'),
+    hudOppName: $('hud-opp-name'),
     selfHpFill: $('self-hp-fill'),
     selfHpText: $('self-hp-text'),
     selfSpeed: $('self-speed'),
@@ -63,6 +66,8 @@
   let net = null;
   let game = null;
   let selectedLoadout = 'warrior';
+  let playerName = '';
+  let opponentName = 'Opponent';
   let bothReady = { self: false, opponent: false };
   let ctx = null; // canvas context
   let animFrame = null;
@@ -74,8 +79,8 @@
     units: [],        // marching units
     impacts: [],      // impact flash effects
     castles: {
-      left: { hp: 1000, maxHp: 1000, shieldAlpha: 0, shakeX: 0, shakeY: 0 },
-      right: { hp: 1000, maxHp: 1000, shieldAlpha: 0, shakeX: 0, shakeY: 0 },
+      left: { hp: 1000, maxHp: 1000, shieldAlpha: 0, healGlow: 0, shakeX: 0, shakeY: 0 },
+      right: { hp: 1000, maxHp: 1000, shieldAlpha: 0, healGlow: 0, shakeX: 0, shakeY: 0 },
     },
     groundY: 0,
     leftCastleX: 0,
@@ -106,6 +111,7 @@
   function sfxShield() { playTone(600, 0.15, 'sine', 0.06); }
   function sfxOverload() { playTone(400, 0.5, 'square', 0.12); }
   function sfxCombo(n) { playTone(500 + n * 40, 0.08, 'sine', 0.05); }
+  function sfxHeal() { playTone(700, 0.12, 'sine', 0.06); setTimeout(() => playTone(900, 0.15, 'sine', 0.05), 100); }
 
   // ====== SCREEN MANAGEMENT ======
   function showScreen(name) {
@@ -422,6 +428,19 @@
       castleState.shieldAlpha = Math.max(0, castleState.shieldAlpha - 0.01);
     }
 
+    // ---- HEAL GLOW ----
+    if (castleState.healGlow > 0) {
+      const grad = ctx.createRadialGradient(cx, baseY - h / 2, 0, cx, baseY - h / 2, w * 1.3);
+      grad.addColorStop(0, `rgba(0, 230, 118, ${castleState.healGlow * 0.25})`);
+      grad.addColorStop(0.6, `rgba(0, 230, 118, ${castleState.healGlow * 0.1})`);
+      grad.addColorStop(1, 'rgba(0, 230, 118, 0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, baseY - h / 2, w * 1.3, 0, Math.PI * 2);
+      ctx.fill();
+      castleState.healGlow = Math.max(0, castleState.healGlow - 0.015);
+    }
+
     // ---- FLAG (falls off when damaged enough) ----
     if (dmg < 0.5) {
       const flagColor = side === 'left' ? '#448aff' : '#e94560';
@@ -597,6 +616,39 @@
     setTimeout(() => screens.game.classList.remove('screen-shake'), 400);
   }
 
+  // ====== HEAL EFFECT ======
+  function spawnHealEffect(amount) {
+    const cx = render.leftCastleX;
+    const baseY = render.groundY - 10;
+
+    // Green rising particles around own castle
+    for (let i = 0; i < 15; i++) {
+      render.particles.push({
+        x: cx - 40 + Math.random() * 80,
+        y: baseY - Math.random() * 100,
+        vx: (Math.random() - 0.5) * 30,
+        vy: -60 - Math.random() * 80,
+        life: 1,
+        decay: 0.6 + Math.random() * 0.4,
+        size: 3 + Math.random() * 4,
+        color: '#00e676',
+      });
+    }
+
+    // Heal number popup
+    render.impacts.push({
+      x: cx,
+      y: baseY - 140,
+      radius: 0,
+      maxRadius: 30,
+      alpha: 1,
+      color: '#00e676',
+    });
+
+    // Green glow on castle
+    render.castles.left.healGlow = 1;
+  }
+
   // ====== UNITS ======
   function spawnUnit(side, unitType) {
     const fromX = side === 'left' ? render.leftCastleX + 90 : render.rightCastleX - 90;
@@ -760,6 +812,7 @@
       ui.shareCode.value = roomId;
       ui.lobbyShare.style.display = '';
       ui.slotP1.classList.add('slot-connected');
+      ui.slotP1.querySelector('.slot-name').innerHTML = `${playerName} <span class="slot-tag">(Host)</span>`;
       ui.slotP1Loadout.textContent = selectedLoadout;
       ui.lobbyStatus.textContent = 'Waiting for opponent to join...';
     };
@@ -770,7 +823,7 @@
       ui.lobbyShare.style.display = 'none';
       ui.slotP2.classList.remove('slot-empty');
       ui.slotP2.classList.add('slot-connected');
-      ui.slotP2Name.textContent = 'Player 2 (You)';
+      ui.slotP2Name.textContent = `${playerName} (You)`;
       ui.slotP2Loadout.textContent = selectedLoadout;
       ui.slotP2Status.innerHTML = '<span class="status-dot connected"></span> Joined';
       ui.lobbyStatus.textContent = 'Connecting to host...';
@@ -786,6 +839,8 @@
     };
 
     net.onConnected = () => {
+      // Send our name and loadout to opponent
+      net.send({ type: 'player-info', name: playerName, loadout: selectedLoadout });
       ui.lobbyStatus.textContent = 'Both players connected!';
       ui.lobbyReady.style.display = '';
     };
@@ -806,6 +861,16 @@
 
   function handleNetMessage(data) {
     switch (data.type) {
+      case 'player-info': {
+        opponentName = data.name || 'Opponent';
+        // Update opponent slot in lobby
+        const oppSlot = net.role === 'host' ? ui.slotP2 : ui.slotP1;
+        oppSlot.querySelector('.slot-name').textContent = opponentName;
+        const oppLoadoutEl = net.role === 'host' ? ui.slotP2Loadout : ui.slotP1Loadout;
+        oppLoadoutEl.textContent = data.loadout || '';
+        break;
+      }
+
       case 'ready': {
         bothReady.opponent = true;
         // Mark opponent slot as ready
@@ -924,9 +989,18 @@
 
     game = new Game(net.seed, selectedLoadout);
 
+    // Set HUD names
+    ui.hudSelfName.textContent = playerName;
+    ui.hudOppName.textContent = opponentName;
+
     game.onShieldGain = () => {
       render.castles.left.shieldAlpha = 1;
       sfxShield();
+    };
+
+    game.onHeal = (amount) => {
+      spawnHealEffect(amount);
+      sfxHeal();
     };
 
     game.onSabotage = (type, duration) => {
@@ -958,8 +1032,8 @@
     render.particles = [];
     render.units = [];
     render.impacts = [];
-    render.castles.left = { hp: 1000, maxHp: 1000, shieldAlpha: 0, shakeX: 0, shakeY: 0 };
-    render.castles.right = { hp: 1000, maxHp: 1000, shieldAlpha: 0, shakeX: 0, shakeY: 0 };
+    render.castles.left = { hp: 1000, maxHp: 1000, shieldAlpha: 0, healGlow: 0, shakeX: 0, shakeY: 0 };
+    render.castles.right = { hp: 1000, maxHp: 1000, shieldAlpha: 0, healGlow: 0, shakeX: 0, shakeY: 0 };
 
     if (!animFrame) {
       lastTime = performance.now();
@@ -1137,7 +1211,14 @@
     });
   });
 
+  function getPlayerName() {
+    const name = ui.inputPlayerName.value.trim();
+    playerName = name || 'Player';
+    return playerName;
+  }
+
   ui.btnCreate.addEventListener('click', async () => {
+    getPlayerName();
     setStatus('Connecting...');
     initNetwork();
     await net.connectSignaling();
@@ -1148,6 +1229,7 @@
   ui.btnJoin.addEventListener('click', async () => {
     const roomId = ui.inputRoomId.value.trim();
     if (!roomId) { setStatus('Enter a room code', true); return; }
+    getPlayerName();
     setStatus('Connecting...');
     initNetwork();
     await net.connectSignaling();
@@ -1195,6 +1277,7 @@
     if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
     game = null;
     bothReady = { self: false, opponent: false };
+    opponentName = 'Opponent';
     // Reset lobby state
     ui.slotP1.className = 'lobby-slot';
     ui.slotP2.className = 'lobby-slot slot-empty';

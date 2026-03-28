@@ -56,6 +56,7 @@ class Game {
     this.onProjectile = null;   // (projectileType, damage, isCritical) => spawn animation
     this.onOverload = null;     // () => overload barrage
     this.onShieldGain = null;   // (amount) =>
+    this.onHeal = null;         // (amount) => visual heal effect
     this.onSabotage = null;     // (type, duration) =>
     this.onUnitSpawn = null;    // (unitType) =>
     this.onGameOver = null;     // ('win' | 'lose') =>
@@ -218,6 +219,38 @@ class Game {
       if (this.onShieldGain) this.onShieldGain(shieldGain);
     }
 
+    // Heal mechanic:
+    // - Perfect accuracy: heal 30 HP
+    // - 95%+ accuracy + combo >= 5: heal 20 HP
+    // - Combo streak milestones (every 10 combo): heal 40 HP
+    // - Guardian loadout gets 30% bonus healing
+    let healAmount = 0;
+    const healMult = this.loadoutName === 'guardian' ? 1.3 : 1.0;
+
+    if (sentenceAcc >= 100) {
+      healAmount += 30;
+    } else if (sentenceAcc >= 95 && this.combo >= 5) {
+      healAmount += 20;
+    }
+
+    // Combo milestone heal every 10 combo
+    if (this.combo > 0 && this.combo % 10 === 0) {
+      healAmount += 40;
+    }
+
+    // Fast typing bonus heal (under 2s)
+    if (elapsed < 2 && sentenceAcc >= 90) {
+      healAmount += 15;
+    }
+
+    if (healAmount > 0) {
+      healAmount = Math.round(healAmount * healMult);
+      const prevHp = this.self.hp;
+      this.self.hp = Math.min(this.self.maxHp, this.self.hp + healAmount);
+      healAmount = this.self.hp - prevHp; // actual heal (capped at max)
+      if (healAmount > 0 && this.onHeal) this.onHeal(healAmount);
+    }
+
     // Check for special projectile triggers
     let sabotageType = null;
     if (projDef.sabotage) {
@@ -253,6 +286,7 @@ class Game {
       speed: elapsed,
       accuracy: sentenceAcc,
       shieldGain,
+      healAmount,
       sabotageType,
     };
   }

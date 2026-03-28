@@ -49,7 +49,9 @@
   <!-- Lobby Screen -->
   <div id="lobby-screen" class="screen">
     <div class="lobby-container">
-      <h2>Room Created</h2>
+      <h1 class="lobby-title">BATTLE <span class="accent">LOBBY</span></h1>
+
+      <!-- Share box (host only, hidden for client) -->
       <div id="lobby-share" class="share-box">
         <p>Send these to your opponent:</p>
         <div class="share-item">
@@ -66,11 +68,39 @@
             <button id="btn-copy-code" class="btn btn-secondary btn-small">Copy</button>
           </div>
         </div>
-        <p class="share-hint">Opponent opens the URL, enters the room code, and clicks Join</p>
       </div>
-      <p id="lobby-status">Waiting for opponent...</p>
+
+      <!-- Player Slots -->
+      <div class="lobby-players">
+        <div class="lobby-slot" id="slot-p1">
+          <div class="slot-icon">&#9876;</div>
+          <div class="slot-info">
+            <span class="slot-name">Player 1 <span class="slot-tag">(Host)</span></span>
+            <span class="slot-loadout" id="slot-p1-loadout"></span>
+          </div>
+          <div class="slot-status" id="slot-p1-status">
+            <span class="status-dot connected"></span> Joined
+          </div>
+        </div>
+
+        <div class="lobby-vs">VS</div>
+
+        <div class="lobby-slot slot-empty" id="slot-p2">
+          <div class="slot-icon">?</div>
+          <div class="slot-info">
+            <span class="slot-name" id="slot-p2-name">Waiting...</span>
+            <span class="slot-loadout" id="slot-p2-loadout"></span>
+          </div>
+          <div class="slot-status" id="slot-p2-status">
+            <span class="status-dot"></span> Empty
+          </div>
+        </div>
+      </div>
+
+      <!-- Status & Ready -->
+      <p id="lobby-status" class="lobby-status-text">Waiting for opponent to join...</p>
       <div id="lobby-ready" style="display:none;">
-        <button id="btn-ready" class="btn btn-primary">Ready</button>
+        <button id="btn-ready" class="btn btn-primary btn-ready-big">READY</button>
       </div>
     </div>
   </div>

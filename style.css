@@ -284,17 +284,145 @@ body {
 /* Lobby */
 .lobby-container {
   text-align: center;
+  width: 500px;
+  max-width: 95%;
 }
 
-.lobby-container h2 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
+.lobby-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  margin-bottom: 1.25rem;
+  text-shadow: 0 0 20px var(--accent-glow);
 }
 
-#lobby-status {
+/* Player Slots */
+.lobby-players {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+}
+
+.lobby-slot {
+  flex: 1;
+  background: var(--bg-surface);
+  border: 2px solid #2a2a3e;
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s;
+}
+
+.lobby-slot.slot-connected {
+  border-color: var(--green);
+  box-shadow: 0 0 15px rgba(0, 230, 118, 0.15);
+}
+
+.lobby-slot.slot-ready {
+  border-color: var(--yellow);
+  box-shadow: 0 0 20px rgba(255, 193, 7, 0.2);
+  background: rgba(255, 193, 7, 0.05);
+}
+
+.lobby-slot.slot-empty {
+  border-style: dashed;
+  opacity: 0.5;
+}
+
+.slot-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border-radius: 50%;
+}
+
+.slot-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.slot-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.slot-tag {
+  font-size: 0.7rem;
   color: var(--text-dim);
-  margin-bottom: 1.5rem;
+  font-weight: 400;
+}
+
+.slot-loadout {
+  font-size: 0.7rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  min-height: 1em;
+}
+
+.slot-status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #444;
+  display: inline-block;
+}
+
+.status-dot.connected {
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+
+.status-dot.ready {
+  background: var(--yellow);
+  box-shadow: 0 0 6px var(--yellow);
+  animation: dot-pulse 1s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+}
+
+.lobby-vs {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.lobby-status-text {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  min-height: 1.5rem;
   animation: pulse 1.5s ease-in-out infinite;
+}
+
+.btn-ready-big {
+  padding: 1rem 3rem;
+  font-size: 1.2rem;
+  letter-spacing: 0.2em;
 }
 
 @keyframes pulse {

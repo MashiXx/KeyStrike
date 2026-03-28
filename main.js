@@ -24,6 +24,13 @@
     shareCode: $('share-code'),
     btnCopyUrl: $('btn-copy-url'),
     btnCopyCode: $('btn-copy-code'),
+    lobbyShare: $('lobby-share'),
+    slotP1: $('slot-p1'),
+    slotP2: $('slot-p2'),
+    slotP1Loadout: $('slot-p1-loadout'),
+    slotP2Name: $('slot-p2-name'),
+    slotP2Loadout: $('slot-p2-loadout'),
+    slotP2Status: $('slot-p2-status'),
     canvas: $('battle-canvas'),
     sentenceDisplay: $('sentence-display'),
     countdownOverlay: $('countdown-overlay'),
@@ -125,82 +132,289 @@
   window.addEventListener('resize', () => { if (ctx) resizeCanvas(); });
 
   // ====== CASTLE DRAWING ======
+  // Seeded random for consistent per-castle brick layout
+  function seededRand(seed) {
+    let s = seed;
+    return () => {
+      s = (s * 16807 + 0) % 2147483647;
+      return (s & 0x7fffffff) / 2147483647;
+    };
+  }
+
+  // Generate brick layout once per castle (cached)
+  const brickCache = {};
+  function getBricks(side, w, h, baseX, baseY) {
+    const key = side;
+    if (brickCache[key] && brickCache[key].w === w) return brickCache[key].bricks;
+
+    const rand = seededRand(side === 'left' ? 12345 : 67890);
+    const bricks = [];
+    const brickH = 10;
+    const rows = Math.floor(h / brickH);
+
+    for (let row = 0; row < rows; row++) {
+      const y = baseY - h + row * brickH;
+      const offset = (row % 2) * 12; // stagger bricks
+      let bx = baseX - w / 2 + offset;
+      while (bx < baseX + w / 2) {
+        const bw = 16 + Math.floor(rand() * 12);
+        const actualW = Math.min(bw, baseX + w / 2 - bx);
+        if (actualW > 3) {
+          bricks.push({
+            x: bx, y, w: actualW, h: brickH - 1,
+            // Each brick has a random "strength" — lower ones fall first
+            strength: rand(),
+            shade: 0.85 + rand() * 0.3,
+            fallen: false,
+            fallVY: 0, fallY: 0, fallVX: 0, fallRot: 0, fallAlpha: 1,
+          });
+        }
+        bx += actualW + 1;
+      }
+    }
+    brickCache[key] = { bricks, w };
+    return bricks;
+  }
+
+  // Generate wall brick layout
+  const wallBrickCache = {};
+  function getWallBricks(side, wallW, wallH, wallX, baseY) {
+    const key = side + '_wall';
+    if (wallBrickCache[key]) return wallBrickCache[key];
+
+    const rand = seededRand(side === 'left' ? 11111 : 99999);
+    const bricks = [];
+    const brickH = 9;
+    const rows = Math.floor(wallH / brickH);
+
+    for (let row = 0; row < rows; row++) {
+      const y = baseY - wallH + row * brickH;
+      const offset = (row % 2) * 10;
+      let bx = wallX + offset;
+      while (bx < wallX + wallW) {
+        const bw = 14 + Math.floor(rand() * 10);
+        const actualW = Math.min(bw, wallX + wallW - bx);
+        if (actualW > 3) {
+          bricks.push({
+            x: bx, y, w: actualW, h: brickH - 1,
+            strength: rand(),
+            shade: 0.8 + rand() * 0.25,
+            fallen: false,
+            fallVY: 0, fallY: 0, fallVX: 0, fallRot: 0, fallAlpha: 1,
+          });
+        }
+        bx += actualW + 1;
+      }
+    }
+    wallBrickCache[key] = bricks;
+    return bricks;
+  }
+
+  // Get crenellation layout
+  function getCrenellations(cx, baseY, h, w) {
+    const cw = 14, ch = 18;
+    const crens = [];
+    for (let i = 0; i < 4; i++) {
+      crens.push({
+        x: cx - w / 2 + i * (w / 4) + 2,
+        y: baseY - h - ch,
+        w: cw, h: ch,
+      });
+    }
+    return crens;
+  }
+
   function drawCastle(x, groundY, castleState, side) {
     const shakeX = castleState.shakeX;
     const shakeY = castleState.shakeY;
     const cx = x + shakeX;
     const cy = groundY + shakeY;
     const hpRatio = castleState.hp / castleState.maxHp;
+    const dmg = 1 - hpRatio; // 0 = full hp, 1 = dead
 
-    // Castle body
     const w = 80, h = 120;
     const baseY = cy - 10;
+    const cw = 14, ch = 18;
 
-    // Damage color tint
-    const r = Math.floor(40 + (1 - hpRatio) * 100);
-    const g = Math.floor(40 + hpRatio * 30);
-    const b = Math.floor(50);
+    // Base wall color — gets darker/redder with damage
+    const baseR = Math.floor(55 + dmg * 80);
+    const baseG = Math.floor(48 + hpRatio * 20);
+    const baseB = Math.floor(42);
 
     ctx.save();
 
-    // Main tower
-    ctx.fillStyle = `rgb(${r},${g},${b})`;
-    ctx.fillRect(cx - w/2, baseY - h, w, h);
-
-    // Tower top (crenellations)
-    const cw = 14, ch = 18;
-    for (let i = 0; i < 4; i++) {
-      const bx = cx - w/2 + i * (w/4) + 2;
-      ctx.fillRect(bx, baseY - h - ch, cw, ch);
+    // ---- RUBBLE PILE at base (grows with damage) ----
+    if (dmg > 0.15) {
+      const rubbleCount = Math.floor(dmg * 20);
+      const rand = seededRand(side === 'left' ? 3333 : 7777);
+      ctx.fillStyle = `rgb(${baseR - 15},${baseG - 10},${baseB - 5})`;
+      for (let i = 0; i < rubbleCount; i++) {
+        const rx = cx - w * 0.7 + rand() * w * 1.4;
+        const ry = baseY - 2 + rand() * 8;
+        const rw = 4 + rand() * 10;
+        const rh = 3 + rand() * 6;
+        ctx.fillRect(rx, ry, rw, rh);
+      }
     }
 
-    // Gate
-    ctx.fillStyle = '#1a1a2e';
-    ctx.beginPath();
-    ctx.arc(cx, baseY, 15, Math.PI, 0);
-    ctx.fill();
-    ctx.fillRect(cx - 15, baseY - 15, 30, 15);
-
-    // Side walls
+    // ---- SIDE WALL (brick by brick) ----
     const wallW = 50, wallH = 60;
-    ctx.fillStyle = `rgb(${r - 10},${g - 5},${b - 5})`;
-    if (side === 'left') {
-      ctx.fillRect(cx + w/2, baseY - wallH, wallW, wallH);
-      // Small tower on wall
-      ctx.fillRect(cx + w/2 + wallW - 12, baseY - wallH - 20, 16, 20);
-    } else {
-      ctx.fillRect(cx - w/2 - wallW, baseY - wallH, wallW, wallH);
-      ctx.fillRect(cx - w/2 - wallW - 4, baseY - wallH - 20, 16, 20);
+    const wallX = side === 'left' ? cx + w / 2 : cx - w / 2 - wallW;
+    const wallBricks = getWallBricks(side, wallW, wallH, wallX - shakeX, baseY - shakeY);
+
+    for (const b of wallBricks) {
+      // Bricks with low strength fall first as damage increases
+      const fallThreshold = b.strength * 0.85;
+      if (dmg > fallThreshold && !b.fallen) {
+        b.fallen = true;
+        b.fallVY = 1 + Math.random() * 2;
+        b.fallVX = (Math.random() - 0.5) * 2;
+        b.fallRot = (Math.random() - 0.5) * 0.1;
+      }
+
+      if (b.fallen) {
+        b.fallY += b.fallVY;
+        b.fallVY += 0.3;
+        b.fallAlpha = Math.max(0, b.fallAlpha - 0.015);
+        if (b.fallAlpha <= 0) continue;
+        ctx.globalAlpha = b.fallAlpha;
+        ctx.fillStyle = `rgb(${Math.floor(baseR * b.shade - 10)},${Math.floor(baseG * b.shade - 5)},${Math.floor(baseB * b.shade)})`;
+        ctx.save();
+        ctx.translate(b.x + shakeX + b.w / 2 + b.fallVX * b.fallY * 0.5, b.y + shakeY + b.fallY);
+        ctx.rotate(b.fallRot * b.fallY);
+        ctx.fillRect(-b.w / 2, 0, b.w, b.h);
+        ctx.restore();
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.fillStyle = `rgb(${Math.floor(baseR * b.shade - 10)},${Math.floor(baseG * b.shade - 5)},${Math.floor(baseB * b.shade)})`;
+        ctx.fillRect(b.x + shakeX, b.y + shakeY, b.w, b.h);
+      }
     }
 
-    // Damage cracks (drawn when hp < 70%)
-    if (hpRatio < 0.7) {
-      ctx.strokeStyle = '#0a0a0f';
-      ctx.lineWidth = 2;
-      const numCracks = Math.floor((1 - hpRatio) * 8);
+    // Small side tower (disappears when heavily damaged)
+    if (dmg < 0.6) {
+      ctx.fillStyle = `rgb(${baseR - 5},${baseG - 5},${baseB})`;
+      if (side === 'left') {
+        const towerH = 20 * (1 - dmg * 0.5);
+        ctx.fillRect(cx + w / 2 + wallW - 12 + shakeX * 0.5, baseY - wallH - towerH + shakeY, 16, towerH);
+      } else {
+        const towerH = 20 * (1 - dmg * 0.5);
+        ctx.fillRect(cx - w / 2 - wallW - 4 + shakeX * 0.5, baseY - wallH - towerH + shakeY, 16, towerH);
+      }
+    }
+
+    // ---- MAIN TOWER (brick by brick) ----
+    const bricks = getBricks(side, w, h, cx - shakeX, baseY - shakeY);
+
+    for (const b of bricks) {
+      const fallThreshold = b.strength * 0.95 + 0.05;
+      if (dmg > fallThreshold && !b.fallen) {
+        b.fallen = true;
+        b.fallVY = 1 + Math.random() * 3;
+        b.fallVX = (Math.random() - 0.5) * 3;
+        b.fallRot = (Math.random() - 0.5) * 0.15;
+      }
+
+      if (b.fallen) {
+        b.fallY += b.fallVY;
+        b.fallVY += 0.35;
+        b.fallAlpha = Math.max(0, b.fallAlpha - 0.012);
+        if (b.fallAlpha <= 0) continue;
+        ctx.globalAlpha = b.fallAlpha;
+        ctx.fillStyle = `rgb(${Math.floor(baseR * b.shade)},${Math.floor(baseG * b.shade)},${Math.floor(baseB * b.shade)})`;
+        ctx.save();
+        ctx.translate(b.x + shakeX + b.w / 2 + b.fallVX * b.fallY * 0.5, b.y + shakeY + b.fallY);
+        ctx.rotate(b.fallRot * b.fallY);
+        ctx.fillRect(-b.w / 2, 0, b.w, b.h);
+        ctx.restore();
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.fillStyle = `rgb(${Math.floor(baseR * b.shade)},${Math.floor(baseG * b.shade)},${Math.floor(baseB * b.shade)})`;
+        ctx.fillRect(b.x + shakeX, b.y + shakeY, b.w, b.h);
+      }
+    }
+
+    // ---- CRENELLATIONS (top battlements) ----
+    const crens = getCrenellations(cx - shakeX, baseY - shakeY, h, w);
+    for (let i = 0; i < crens.length; i++) {
+      // Crenellations fall at different damage thresholds
+      const threshold = 0.2 + i * 0.15;
+      if (dmg > threshold) continue; // gone
+      const c = crens[i];
+      const wobble = dmg > threshold - 0.1 ? Math.sin(Date.now() * 0.01 + i) * dmg * 3 : 0;
+      ctx.fillStyle = `rgb(${baseR},${baseG},${baseB})`;
+      ctx.fillRect(c.x + shakeX + wobble, c.y + shakeY, c.w, c.h);
+    }
+
+    // ---- GATE ----
+    if (dmg < 0.85) {
+      ctx.fillStyle = '#1a1a2e';
+      ctx.beginPath();
+      ctx.arc(cx, baseY, 15, Math.PI, 0);
+      ctx.fill();
+      ctx.fillRect(cx - 15, baseY - 15, 30, 15);
+    }
+
+    // ---- CRACKS on remaining bricks ----
+    if (dmg > 0.1 && dmg < 0.9) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+      ctx.lineWidth = 1.5;
+      const numCracks = Math.floor(dmg * 12);
+      const rand = seededRand(side === 'left' ? 5555 : 8888);
       for (let i = 0; i < numCracks; i++) {
-        const crackX = cx - w/3 + (i * 17) % w;
-        const crackY = baseY - h * 0.3 - (i * 23) % (h * 0.5);
+        const crX = cx - w / 3 + rand() * (w * 0.7);
+        const crY = baseY - h * 0.2 - rand() * (h * 0.6);
         ctx.beginPath();
-        ctx.moveTo(crackX, crackY);
-        ctx.lineTo(crackX + 8, crackY + 12);
-        ctx.lineTo(crackX + 3, crackY + 20);
+        ctx.moveTo(crX, crY);
+        ctx.lineTo(crX + 5 + rand() * 8, crY + 8 + rand() * 10);
+        ctx.lineTo(crX + rand() * 6 - 3, crY + 16 + rand() * 12);
         ctx.stroke();
       }
     }
 
-    // Heavy damage: missing chunks (hp < 40%)
-    if (hpRatio < 0.4) {
-      ctx.fillStyle = '#0a0a0f';
-      ctx.fillRect(cx - w/4, baseY - h, 20, 15);
-      ctx.fillRect(cx + 5, baseY - h - ch, 12, 12);
+    // ---- FIRE / SMOKE when heavily damaged ----
+    if (dmg > 0.4) {
+      const fireIntensity = (dmg - 0.4) / 0.6;
+      const numFlames = Math.floor(fireIntensity * 6);
+      const t = Date.now() * 0.003;
+      for (let i = 0; i < numFlames; i++) {
+        const fx = cx - w * 0.3 + ((i * 37) % w) * 0.8;
+        const fy = baseY - h * 0.3 - i * 12;
+        const flicker = Math.sin(t + i * 2.1) * 5;
+
+        // Flame glow
+        const grad = ctx.createRadialGradient(fx, fy + flicker, 0, fx, fy + flicker, 12 + fireIntensity * 8);
+        grad.addColorStop(0, `rgba(255, 200, 50, ${0.6 * fireIntensity})`);
+        grad.addColorStop(0.5, `rgba(255, 100, 20, ${0.4 * fireIntensity})`);
+        grad.addColorStop(1, 'rgba(255, 50, 0, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(fx, fy + flicker, 12 + fireIntensity * 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Smoke puffs
+      if (dmg > 0.55) {
+        const smokeCount = Math.floor((dmg - 0.55) * 8);
+        for (let i = 0; i < smokeCount; i++) {
+          const sx = cx - w * 0.2 + ((i * 51) % w) * 0.5;
+          const sy = baseY - h * 0.5 - i * 15 + Math.sin(t * 0.5 + i) * 10;
+          const size = 8 + fireIntensity * 12;
+          ctx.globalAlpha = 0.15 * fireIntensity;
+          ctx.fillStyle = '#444';
+          ctx.beginPath();
+          ctx.arc(sx, sy - Math.abs(Math.sin(t + i)) * 15, size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
     }
 
-    // Shield glow
+    // ---- SHIELD GLOW ----
     if (castleState.shieldAlpha > 0) {
       ctx.beginPath();
-      ctx.arc(cx, baseY - h/2, w * 1.1, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(0, 229, 255, ${castleState.shieldAlpha * 0.2})`;
+      ctx.arc(cx, baseY - h / 2, w * 1.2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0, 229, 255, ${castleState.shieldAlpha * 0.15})`;
       ctx.fill();
       ctx.strokeStyle = `rgba(0, 229, 255, ${castleState.shieldAlpha * 0.6})`;
       ctx.lineWidth = 2;
@@ -208,14 +422,26 @@
       castleState.shieldAlpha = Math.max(0, castleState.shieldAlpha - 0.01);
     }
 
-    // Flag on top
-    ctx.fillStyle = side === 'left' ? '#448aff' : '#e94560';
-    ctx.fillRect(cx, baseY - h - ch - 25, 2, 25);
-    ctx.beginPath();
-    ctx.moveTo(cx + 2, baseY - h - ch - 25);
-    ctx.lineTo(cx + 18, baseY - h - ch - 18);
-    ctx.lineTo(cx + 2, baseY - h - ch - 11);
-    ctx.fill();
+    // ---- FLAG (falls off when damaged enough) ----
+    if (dmg < 0.5) {
+      const flagColor = side === 'left' ? '#448aff' : '#e94560';
+      const flagWobble = Math.sin(Date.now() * 0.004) * 2;
+      ctx.fillStyle = flagColor;
+      ctx.fillRect(cx, baseY - h - ch - 25, 2, 25);
+      ctx.beginPath();
+      ctx.moveTo(cx + 2, baseY - h - ch - 25);
+      ctx.lineTo(cx + 18 + flagWobble, baseY - h - ch - 18);
+      ctx.lineTo(cx + 2, baseY - h - ch - 11);
+      ctx.fill();
+    } else if (dmg < 0.7) {
+      // Tilted flagpole
+      ctx.save();
+      ctx.translate(cx, baseY - h - ch);
+      ctx.rotate(dmg * 0.8);
+      ctx.fillStyle = '#666';
+      ctx.fillRect(0, -20, 2, 20);
+      ctx.restore();
+    }
 
     ctx.restore();
   }
@@ -530,25 +756,38 @@
 
     net.onRoomCreated = (roomId) => {
       showScreen('lobby');
-      ui.lobbyRoomId.textContent = roomId;
       ui.shareUrl.value = location.origin;
       ui.shareCode.value = roomId;
-      ui.lobbyStatus.textContent = 'Waiting for opponent...';
+      ui.lobbyShare.style.display = '';
+      ui.slotP1.classList.add('slot-connected');
+      ui.slotP1Loadout.textContent = selectedLoadout;
+      ui.lobbyStatus.textContent = 'Waiting for opponent to join...';
     };
 
     net.onRoomJoined = (roomId) => {
       showScreen('lobby');
-      ui.lobbyRoomId.textContent = roomId;
-      ui.lobbyStatus.textContent = 'Connecting...';
+      // Client view: hide share box, mark self as P2
+      ui.lobbyShare.style.display = 'none';
+      ui.slotP2.classList.remove('slot-empty');
+      ui.slotP2.classList.add('slot-connected');
+      ui.slotP2Name.textContent = 'Player 2 (You)';
+      ui.slotP2Loadout.textContent = selectedLoadout;
+      ui.slotP2Status.innerHTML = '<span class="status-dot connected"></span> Joined';
+      ui.lobbyStatus.textContent = 'Connecting to host...';
     };
 
     net.onOpponentJoined = () => {
+      // Host sees opponent join
+      ui.slotP2.classList.remove('slot-empty');
+      ui.slotP2.classList.add('slot-connected');
+      ui.slotP2Name.textContent = 'Player 2';
+      ui.slotP2Status.innerHTML = '<span class="status-dot connected"></span> Joined';
       ui.lobbyStatus.textContent = 'Opponent joined! Connecting...';
     };
 
     net.onConnected = () => {
-      ui.lobbyStatus.textContent = 'Connected! Press Ready to start.';
-      ui.lobbyReady.style.display = 'block';
+      ui.lobbyStatus.textContent = 'Both players connected!';
+      ui.lobbyReady.style.display = '';
     };
 
     net.onMessage = handleNetMessage;
@@ -567,10 +806,23 @@
 
   function handleNetMessage(data) {
     switch (data.type) {
-      case 'ready':
+      case 'ready': {
         bothReady.opponent = true;
+        // Mark opponent slot as ready
+        const oppSlot = net.role === 'host' ? ui.slotP2 : ui.slotP1;
+        oppSlot.classList.add('slot-ready');
+        const oppDot = oppSlot.querySelector('.status-dot');
+        if (oppDot) oppDot.className = 'status-dot ready';
+        const oppStatusEl = oppSlot.querySelector('.slot-status');
+        if (oppStatusEl) oppStatusEl.childNodes[oppStatusEl.childNodes.length - 1].textContent = ' Ready';
+        if (bothReady.self) {
+          ui.lobbyStatus.textContent = 'Both ready! Starting...';
+        } else {
+          ui.lobbyStatus.textContent = 'Opponent is ready! Press READY';
+        }
         checkBothReady();
         break;
+      }
 
       case 'attack': {
         if (!game) return;
@@ -924,7 +1176,16 @@
   ui.btnReady.addEventListener('click', () => {
     bothReady.self = true;
     ui.btnReady.disabled = true;
-    ui.btnReady.textContent = 'Waiting...';
+    ui.btnReady.textContent = 'READY!';
+    ui.btnReady.style.opacity = '0.6';
+    // Mark own slot as ready
+    const mySlot = net.role === 'host' ? ui.slotP1 : ui.slotP2;
+    mySlot.classList.add('slot-ready');
+    const myDot = mySlot.querySelector('.status-dot');
+    if (myDot) { myDot.className = 'status-dot ready'; }
+    const myStatusText = mySlot.querySelector('.slot-status');
+    if (myStatusText) myStatusText.childNodes[myStatusText.childNodes.length - 1].textContent = ' Ready';
+    ui.lobbyStatus.textContent = 'Waiting for opponent to ready up...';
     net.send({ type: 'ready' });
     checkBothReady();
   });
@@ -934,6 +1195,16 @@
     if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
     game = null;
     bothReady = { self: false, opponent: false };
+    // Reset lobby state
+    ui.slotP1.className = 'lobby-slot';
+    ui.slotP2.className = 'lobby-slot slot-empty';
+    ui.slotP2Name.textContent = 'Waiting...';
+    ui.slotP2Loadout.textContent = '';
+    ui.slotP2Status.innerHTML = '<span class="status-dot"></span> Empty';
+    ui.lobbyReady.style.display = 'none';
+    ui.btnReady.disabled = false;
+    ui.btnReady.textContent = 'READY';
+    ui.btnReady.style.opacity = '';
     showScreen('menu');
     setStatus('');
   });

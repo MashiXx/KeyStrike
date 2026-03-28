@@ -1,5 +1,4 @@
-/.claude
-/.env
-/node_modules
-/package-lock.json
-/task.txt
+node_modules/
+.env
+.DS_Store
+task.txt

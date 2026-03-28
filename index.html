@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KeyStrike</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Menu Screen -->
+  <div id="menu-screen" class="screen active">
+    <div class="menu-container">
+      <h1 class="game-title">KEY<span class="accent">STRIKE</span></h1>
+      <p class="subtitle">1v1 Typing Battle</p>
+      <div class="menu-buttons">
+        <button id="btn-create" class="btn btn-primary">Create Room</button>
+        <div class="join-group">
+          <input type="text" id="input-room-id" placeholder="Room Code" maxlength="6" autocomplete="off">
+          <button id="btn-join" class="btn btn-secondary">Join</button>
+        </div>
+      </div>
+      <div id="menu-status" class="status-text"></div>
+    </div>
+  </div>
+
+  <!-- Lobby Screen -->
+  <div id="lobby-screen" class="screen">
+    <div class="lobby-container">
+      <h2>Room: <span id="lobby-room-id" class="accent"></span></h2>
+      <div id="lobby-share" class="share-box">
+        <p>Share this with your opponent:</p>
+        <div class="share-link-row">
+          <input type="text" id="share-url" class="share-url" readonly>
+          <button id="btn-copy" class="btn btn-secondary btn-small">Copy</button>
+        </div>
+        <p class="share-hint">Opponent opens this URL, enters the room code, and clicks Join</p>
+      </div>
+      <p id="lobby-status">Waiting for opponent...</p>
+      <div id="lobby-ready" style="display:none;">
+        <button id="btn-ready" class="btn btn-primary">Ready</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" class="screen">
+    <!-- Opponent Status (top) -->
+    <div id="opponent-area" class="player-area opponent-area">
+      <div class="player-info">
+        <span class="player-label">OPPONENT</span>
+        <div class="stats">
+          <span class="stat">SPD: <span id="opp-speed">0</span>s</span>
+          <span class="stat">ACC: <span id="opp-accuracy">100</span>%</span>
+        </div>
+      </div>
+      <div class="meter-group">
+        <div class="meter">
+          <label>CHAOS</label>
+          <div class="meter-bar">
+            <div id="opp-chaos-fill" class="meter-fill chaos-fill"></div>
+          </div>
+          <span id="opp-chaos-val" class="meter-val">0%</span>
+        </div>
+        <div class="meter">
+          <label>CORRUPTION</label>
+          <div class="meter-bar">
+            <div id="opp-corruption-fill" class="meter-fill corruption-fill"></div>
+          </div>
+          <span id="opp-corruption-val" class="meter-val">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typing Area (center) -->
+    <div id="typing-area">
+      <div id="combo-display" class="combo-display" style="display:none;">
+        <span id="combo-count"></span> COMBO
+      </div>
+      <div id="sentence-display" class="sentence-display"></div>
+      <div id="stun-overlay" class="stun-overlay" style="display:none;">
+        <span>STUNNED</span>
+      </div>
+    </div>
+
+    <!-- Countdown Overlay -->
+    <div id="countdown-overlay" class="countdown-overlay" style="display:none;">
+      <span id="countdown-text"></span>
+    </div>
+
+    <!-- Effects Layer -->
+    <div id="effects-layer" class="effects-layer"></div>
+
+    <!-- Player Status (bottom) -->
+    <div id="player-area" class="player-area self-area">
+      <div class="player-info">
+        <span class="player-label">YOU</span>
+        <div class="stats">
+          <span class="stat">SPD: <span id="self-speed">0</span>s</span>
+          <span class="stat">ACC: <span id="self-accuracy">100</span>%</span>
+        </div>
+      </div>
+      <div class="meter-group">
+        <div class="meter">
+          <label>CHAOS</label>
+          <div class="meter-bar">
+            <div id="self-chaos-fill" class="meter-fill chaos-fill"></div>
+          </div>
+          <span id="self-chaos-val" class="meter-val">0%</span>
+        </div>
+        <div class="meter">
+          <label>CORRUPTION</label>
+          <div class="meter-bar">
+            <div id="self-corruption-fill" class="meter-fill corruption-fill"></div>
+          </div>
+          <span id="self-corruption-val" class="meter-val">0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" class="screen">
+    <div class="gameover-container">
+      <h1 id="gameover-title"></h1>
+      <p id="gameover-stats"></p>
+      <button id="btn-menu" class="btn btn-primary">Back to Menu</button>
+    </div>
+  </div>
+
+  <script src="network.js"></script>
+  <script src="game.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

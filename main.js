@@ -66,6 +66,7 @@
   let net = null;
   let game = null;
   let selectedLoadout = 'warrior';
+  let selectedLang = 'en';
   let playerName = '';
   let opponentName = 'Opponent';
   let bothReady = { self: false, opponent: false };
@@ -987,7 +988,7 @@
     ui.countdownOverlay.style.display = 'none';
     resizeCanvas();
 
-    game = new Game(net.seed, selectedLoadout);
+    game = new Game(net.seed, selectedLoadout, net.lang);
 
     // Set HUD names
     ui.hudSelfName.textContent = playerName;
@@ -1211,6 +1212,14 @@
     });
   });
 
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedLang = btn.dataset.lang;
+    });
+  });
+
   function getPlayerName() {
     const name = ui.inputPlayerName.value.trim();
     playerName = name || 'Player';
@@ -1222,7 +1231,7 @@
     setStatus('Connecting...');
     initNetwork();
     await net.connectSignaling();
-    net.createRoom();
+    net.createRoom(selectedLang);
     setStatus('Creating room...');
   });
 

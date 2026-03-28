@@ -69,10 +69,11 @@ wss.on('connection', (ws) => {
       case 'create-room': {
         const roomId = generateRoomId();
         const seed = Math.floor(Math.random() * 1000000);
-        rooms.set(roomId, { host: ws, client: null, seed });
+        const lang = msg.lang || 'en';
+        rooms.set(roomId, { host: ws, client: null, seed, lang });
         ws.roomId = roomId;
         ws.role = 'host';
-        send(ws, { type: 'room-created', roomId, seed });
+        send(ws, { type: 'room-created', roomId, seed, lang });
         console.log(`Room ${roomId} created`);
         break;
       }
@@ -91,7 +92,7 @@ wss.on('connection', (ws) => {
         room.client = ws;
         ws.roomId = roomId;
         ws.role = 'client';
-        send(ws, { type: 'room-joined', roomId, seed: room.seed });
+        send(ws, { type: 'room-joined', roomId, seed: room.seed, lang: room.lang });
         send(room.host, { type: 'opponent-joined' });
         console.log(`Player joined room ${roomId}`);
         break;

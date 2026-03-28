@@ -9,6 +9,7 @@ class Network {
     this.role = null; // 'host' or 'client'
     this.roomId = null;
     this.seed = null;
+    this.lang = 'en';
     this.connected = false;
 
     // Callbacks set by main.js
@@ -49,9 +50,9 @@ class Network {
   }
 
   // Create a new room (host)
-  createRoom() {
+  createRoom(lang = 'en') {
     this.role = 'host';
-    this._wsSend({ type: 'create-room' });
+    this._wsSend({ type: 'create-room', lang });
   }
 
   // Join existing room (client)
@@ -73,12 +74,14 @@ class Network {
       case 'room-created':
         this.roomId = msg.roomId;
         this.seed = msg.seed;
+        this.lang = msg.lang || 'en';
         if (this.onRoomCreated) this.onRoomCreated(msg.roomId);
         break;
 
       case 'room-joined':
         this.roomId = msg.roomId;
         this.seed = msg.seed;
+        this.lang = msg.lang || 'en';
         if (this.onRoomJoined) this.onRoomJoined(msg.roomId);
         break;
 

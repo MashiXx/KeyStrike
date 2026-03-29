@@ -98,10 +98,8 @@ wss.on('connection', (ws) => {
         break;
       }
 
-      // WebRTC signaling relay
-      case 'offer':
-      case 'answer':
-      case 'ice-candidate': {
+      // Relay game data to opponent
+      case 'game-data': {
         const room = rooms.get(ws.roomId);
         if (!room) return;
         const target = ws.role === 'host' ? room.client : room.host;

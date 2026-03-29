@@ -31,7 +31,12 @@ class Network {
       };
 
       this.ws.onmessage = (e) => {
-        const msg = JSON.parse(e.data);
+        let msg;
+        try {
+          msg = JSON.parse(e.data);
+        } catch {
+          return;
+        }
         this._handleMessage(msg);
       };
 

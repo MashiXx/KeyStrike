@@ -2,6 +2,11 @@
 
 1v1 multiplayer typing battle game in the browser. Two players compete by typing sentences as fast and accurately as possible, attacking each other with damage based on speed and accuracy.
 
+<p align="center">
+  <img src="images/screenshot1.png" alt="Main Menu" width="400">
+  <img src="images/screenshot2.png" alt="Gameplay" width="400">
+</p>
+
 ## How to Play
 
 - **Host** creates a room and shares the URL + room code with opponent

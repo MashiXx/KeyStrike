@@ -68,22 +68,57 @@
       <h2 class="help-title">Hướng Dẫn Gõ <span class="accent">10 Ngón</span></h2>
 
       <div class="help-keyboard">
-        <pre class="keyboard-diagram">
-┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
-│  Q  │  W  │  E  │  R  │  T  │  Y  │  U  │  I  │  O  │  P  │
-│ <span class="finger-pink-l">út T</span> │<span class="finger-ring-l">áp T</span>│<span class="finger-mid-l">giữaT</span>│<span class="finger-idx-l">trỏ T</span>│<span class="finger-idx-l">trỏ T</span>│<span class="finger-idx-r">trỏ P</span>│<span class="finger-idx-r">trỏ P</span>│<span class="finger-mid-r">giữaP</span>│<span class="finger-ring-r">áp P</span>│ <span class="finger-pink-r">út P</span> │
-├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-│  A  │  S  │  D  │  F  │  G  │  H  │  J  │  K  │  L  │  ;  │
-│ <span class="finger-pink-l">út T</span> │<span class="finger-ring-l">áp T</span>│<span class="finger-mid-l">giữaT</span>│<span class="finger-idx-l">trỏ T</span>│<span class="finger-idx-l">trỏ T</span>│<span class="finger-idx-r">trỏ P</span>│<span class="finger-idx-r">trỏ P</span>│<span class="finger-mid-r">giữaP</span>│<span class="finger-ring-r">áp P</span>│ <span class="finger-pink-r">út P</span> │
-├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-│  Z  │  X  │  C  │  V  │  B  │  N  │  M  │  ,  │  .  │  /  │
-│ <span class="finger-pink-l">út T</span> │<span class="finger-ring-l">áp T</span>│<span class="finger-mid-l">giữaT</span>│<span class="finger-idx-l">trỏ T</span>│<span class="finger-idx-l">trỏ T</span>│<span class="finger-idx-r">trỏ P</span>│<span class="finger-idx-r">trỏ P</span>│<span class="finger-mid-r">giữaP</span>│<span class="finger-ring-r">áp P</span>│ <span class="finger-pink-r">út P</span> │
-└─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
-├──── <span class="finger-pink-l">Tay trái</span> ──────────────┤├────────────── <span class="finger-pink-r">Tay phải</span> ────┤
-                    ┌───────────────────────┐
-                    │      Space Bar        │
-                    │     (ngón cái)        │
-                    └───────────────────────┘</pre>
+        <!-- Visual Hands -->
+        <div class="hands-visual">
+          <div class="hand hand-left">
+            <div class="hand-label"><span class="finger-pink-l">Tay trái</span></div>
+            <div class="fingers">
+              <div class="finger finger-pinky" style="--h:38px"><span class="finger-pink-l">Út</span></div>
+              <div class="finger finger-ring" style="--h:48px"><span class="finger-ring-l">Áp út</span></div>
+              <div class="finger finger-middle" style="--h:54px"><span class="finger-mid-l">Giữa</span></div>
+              <div class="finger finger-index" style="--h:48px"><span class="finger-idx-l">Trỏ</span></div>
+              <div class="finger finger-thumb-l"><span class="finger-idx-l">Cái</span></div>
+            </div>
+            <div class="finger-keys">
+              <span class="finger-pink-l">QAZ</span>
+              <span class="finger-ring-l">WSX</span>
+              <span class="finger-mid-l">EDC</span>
+              <span class="finger-idx-l">RTFGVB</span>
+            </div>
+          </div>
+          <div class="hand hand-right">
+            <div class="hand-label"><span class="finger-pink-r">Tay phải</span></div>
+            <div class="fingers">
+              <div class="finger finger-thumb-r"><span class="finger-idx-r">Cái</span></div>
+              <div class="finger finger-index" style="--h:48px"><span class="finger-idx-r">Trỏ</span></div>
+              <div class="finger finger-middle" style="--h:54px"><span class="finger-mid-r">Giữa</span></div>
+              <div class="finger finger-ring" style="--h:48px"><span class="finger-ring-r">Áp út</span></div>
+              <div class="finger finger-pinky" style="--h:38px"><span class="finger-pink-r">Út</span></div>
+            </div>
+            <div class="finger-keys">
+              <span class="finger-idx-r">YUHJNM</span>
+              <span class="finger-mid-r">IK,</span>
+              <span class="finger-ring-r">OL.</span>
+              <span class="finger-pink-r">P;/</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Keyboard Diagram -->
+        <div class="keyboard-visual">
+          <div class="kb-row">
+            <kbd class="key finger-pink-l">Q</kbd><kbd class="key finger-ring-l">W</kbd><kbd class="key finger-mid-l">E</kbd><kbd class="key finger-idx-l">R</kbd><kbd class="key finger-idx-l">T</kbd><kbd class="key finger-idx-r">Y</kbd><kbd class="key finger-idx-r">U</kbd><kbd class="key finger-mid-r">I</kbd><kbd class="key finger-ring-r">O</kbd><kbd class="key finger-pink-r">P</kbd>
+          </div>
+          <div class="kb-row kb-row-home">
+            <kbd class="key finger-pink-l">A</kbd><kbd class="key finger-ring-l">S</kbd><kbd class="key finger-mid-l">D</kbd><kbd class="key key-home finger-idx-l">F</kbd><kbd class="key finger-idx-l">G</kbd><kbd class="key finger-idx-r">H</kbd><kbd class="key key-home finger-idx-r">J</kbd><kbd class="key finger-mid-r">K</kbd><kbd class="key finger-ring-r">L</kbd><kbd class="key finger-pink-r">;</kbd>
+          </div>
+          <div class="kb-row">
+            <kbd class="key finger-pink-l">Z</kbd><kbd class="key finger-ring-l">X</kbd><kbd class="key finger-mid-l">C</kbd><kbd class="key finger-idx-l">V</kbd><kbd class="key finger-idx-l">B</kbd><kbd class="key finger-idx-r">N</kbd><kbd class="key finger-idx-r">M</kbd><kbd class="key finger-mid-r">,</kbd><kbd class="key finger-ring-r">.</kbd><kbd class="key finger-pink-r">/</kbd>
+          </div>
+          <div class="kb-row">
+            <kbd class="key key-space">Space (ngón cái)</kbd>
+          </div>
+        </div>
       </div>
 
       <div class="help-sections">

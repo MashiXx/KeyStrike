@@ -956,13 +956,135 @@ body {
   overflow-x: auto;
 }
 
-.keyboard-diagram {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  line-height: 1.4;
-  color: var(--text-dim);
+/* Hands Visual */
+.hands-visual {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.hand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hand-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.fingers {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.finger {
+  width: 28px;
+  height: var(--h, 44px);
+  border-radius: 10px 10px 4px 4px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 5px;
+  font-size: 0.5rem;
+  font-weight: 700;
   text-align: center;
-  white-space: pre;
+  transition: transform 0.2s;
+}
+
+.finger:hover {
+  transform: translateY(-4px);
+}
+
+.hand-left .finger-pinky { background: rgba(255, 107, 157, 0.25); border: 2px solid #ff6b9d; }
+.hand-left .finger-ring { background: rgba(196, 144, 228, 0.25); border: 2px solid #c490e4; }
+.hand-left .finger-middle { background: rgba(100, 181, 246, 0.25); border: 2px solid #64b5f6; }
+.hand-left .finger-index { background: rgba(129, 199, 132, 0.25); border: 2px solid #81c784; }
+.hand-right .finger-index { background: rgba(255, 241, 118, 0.25); border: 2px solid #fff176; }
+.hand-right .finger-middle { background: rgba(255, 183, 77, 0.25); border: 2px solid #ffb74d; }
+.hand-right .finger-ring { background: rgba(240, 98, 146, 0.25); border: 2px solid #f06292; }
+.hand-right .finger-pinky { background: rgba(206, 147, 216, 0.25); border: 2px solid #ce93d8; }
+
+.finger-thumb-l, .finger-thumb-r {
+  width: 36px;
+  --h: 26px;
+  border-radius: 4px 10px 10px 4px;
+  align-self: flex-end;
+  margin-bottom: -2px;
+}
+
+.hand-left .finger-thumb-l { background: rgba(129, 199, 132, 0.2); border: 2px solid #81c784; }
+.hand-right .finger-thumb-r { background: rgba(255, 241, 118, 0.2); border: 2px solid #fff176; }
+
+.finger-keys {
+  display: flex;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* Keyboard Visual */
+.keyboard-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.kb-row {
+  display: flex;
+  gap: 4px;
+}
+
+.key {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--bg-card);
+  border: 1.5px solid #333;
+  transition: all 0.15s;
+  cursor: default;
+}
+
+.key:hover {
+  transform: translateY(-2px);
+  border-color: #555;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.key.finger-pink-l { border-color: #ff6b9d; background: rgba(255, 107, 157, 0.1); }
+.key.finger-ring-l { border-color: #c490e4; background: rgba(196, 144, 228, 0.1); }
+.key.finger-mid-l  { border-color: #64b5f6; background: rgba(100, 181, 246, 0.1); }
+.key.finger-idx-l  { border-color: #81c784; background: rgba(129, 199, 132, 0.1); }
+.key.finger-idx-r  { border-color: #fff176; background: rgba(255, 241, 118, 0.1); }
+.key.finger-mid-r  { border-color: #ffb74d; background: rgba(255, 183, 77, 0.1); }
+.key.finger-ring-r { border-color: #f06292; background: rgba(240, 98, 146, 0.1); }
+.key.finger-pink-r { border-color: #ce93d8; background: rgba(206, 147, 216, 0.1); }
+
+.key-home {
+  box-shadow: 0 3px 0 0 currentColor;
+}
+
+.key-space {
+  width: 200px;
+  height: 30px;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  border-color: #555;
 }
 
 .help-sections {

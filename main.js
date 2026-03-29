@@ -65,6 +65,9 @@
     btnHelp: $('btn-help'),
     helpModal: $('help-modal'),
     btnHelpClose: $('btn-help-close'),
+    // Hint
+    btnHint: $('btn-hint'),
+    hintDisplay: $('hint-display'),
   };
 
   const typingInput = $('typing-input');
@@ -77,6 +80,27 @@
   let bothReady = { self: false, opponent: false };
   let ctx = null; // canvas context
   let animFrame = null;
+  let hintEnabled = true;
+
+  // Finger mapping: hand ('l'/'r'), finger index (0=pinky..3=index, 4=thumb)
+  // Colors match the help modal finger classes
+  const FINGER_COLORS = {
+    l: ['#ff6b9d', '#c490e4', '#64b5f6', '#81c784', '#81c784'],
+    r: ['#ce93d8', '#f06292', '#ffb74d', '#fff176', '#fff176'],
+  };
+  const FINGER_MAP = {
+    'q': { hand: 'l', fi: 0 }, 'a': { hand: 'l', fi: 0 }, 'z': { hand: 'l', fi: 0 },
+    'w': { hand: 'l', fi: 1 }, 's': { hand: 'l', fi: 1 }, 'x': { hand: 'l', fi: 1 },
+    'e': { hand: 'l', fi: 2 }, 'd': { hand: 'l', fi: 2 }, 'c': { hand: 'l', fi: 2 },
+    'r': { hand: 'l', fi: 3 }, 'f': { hand: 'l', fi: 3 }, 'v': { hand: 'l', fi: 3 },
+    't': { hand: 'l', fi: 3 }, 'g': { hand: 'l', fi: 3 }, 'b': { hand: 'l', fi: 3 },
+    'y': { hand: 'r', fi: 3 }, 'h': { hand: 'r', fi: 3 }, 'n': { hand: 'r', fi: 3 },
+    'u': { hand: 'r', fi: 3 }, 'j': { hand: 'r', fi: 3 }, 'm': { hand: 'r', fi: 3 },
+    'i': { hand: 'r', fi: 2 }, 'k': { hand: 'r', fi: 2 }, ',': { hand: 'r', fi: 2 },
+    'o': { hand: 'r', fi: 1 }, 'l': { hand: 'r', fi: 1 }, '.': { hand: 'r', fi: 1 },
+    'p': { hand: 'r', fi: 0 }, ';': { hand: 'r', fi: 0 }, '/': { hand: 'r', fi: 0 },
+    ' ': { hand: 'lr', fi: 4 },
+  };
 
   // ====== RENDER STATE ======
   const render = {
@@ -1074,6 +1098,66 @@
       html += `<span class="char ${cls}" data-idx="${i}">${ch}</span>`;
     }
     ui.sentenceDisplay.innerHTML = html;
+    renderHint(sentence, idx);
+  }
+
+  function buildHandHtml(side, activeIdx) {
+    // finger heights: pinky, ring, middle, index
+    const heights = [18, 26, 30, 26];
+    const colors = FINGER_COLORS[side];
+    let html = `<div class="hint-hand">`;
+    if (side === 'l') {
+      // left hand: pinky, ring, middle, index, thumb
+      for (let i = 0; i < 4; i++) {
+        const active = activeIdx === i;
+        const color = colors[i];
+        const bg = active ? color : '#333';
+        const cls = active ? ' active-finger' : '';
+        html += `<div class="hint-digit${cls}" style="height:${heights[i]}px;background:${bg};${active ? 'color:' + color : ''}"></div>`;
+      }
+      const tActive = activeIdx === 4;
+      const tColor = colors[4];
+      html += `<div class="hint-thumb${tActive ? ' active-finger' : ''}" style="background:${tActive ? tColor : '#333'};${tActive ? 'color:' + tColor : ''}"></div>`;
+    } else {
+      // right hand: thumb, index, middle, ring, pinky
+      const tActive = activeIdx === 4;
+      const tColor = colors[4];
+      html += `<div class="hint-thumb hint-thumb-r${tActive ? ' active-finger' : ''}" style="background:${tActive ? tColor : '#333'};${tActive ? 'color:' + tColor : ''}"></div>`;
+      for (let i = 3; i >= 0; i--) {
+        const active = activeIdx === i;
+        const color = colors[i];
+        const bg = active ? color : '#333';
+        const cls = active ? ' active-finger' : '';
+        html += `<div class="hint-digit${cls}" style="height:${heights[i]}px;background:${bg};${active ? 'color:' + color : ''}"></div>`;
+      }
+    }
+    html += `</div>`;
+    return html;
+  }
+
+  function renderHint(sentence, idx) {
+    if (!hintEnabled || idx >= sentence.length) {
+      ui.hintDisplay.innerHTML = '';
+      return;
+    }
+    const ch = sentence[idx];
+    const info = FINGER_MAP[ch.toLowerCase()];
+    if (!info) {
+      ui.hintDisplay.innerHTML = '';
+      return;
+    }
+    const displayKey = ch === ' ' ? 'Space' : ch.toUpperCase();
+    const activeColor = info.hand === 'lr' ? FINGER_COLORS.l[4] : FINGER_COLORS[info.hand][info.fi];
+
+    let html = '';
+    // Left hand
+    html += buildHandHtml('l', info.hand === 'l' || info.hand === 'lr' ? info.fi : -1);
+    // Key label in the middle
+    html += `<span class="hint-key-label" style="border-color:${activeColor};color:${activeColor}">${escapeHtml(displayKey)}</span>`;
+    // Right hand
+    html += buildHandHtml('r', info.hand === 'r' || info.hand === 'lr' ? info.fi : -1);
+
+    ui.hintDisplay.innerHTML = html;
   }
 
   function escapeHtml(c) {
@@ -1348,6 +1432,17 @@
     ui.btnReady.style.opacity = '';
     showScreen('menu');
     setStatus('');
+  });
+
+  // Hint toggle
+  ui.btnHint.addEventListener('click', () => {
+    hintEnabled = !hintEnabled;
+    ui.btnHint.classList.toggle('active', hintEnabled);
+    if (game && game.active) {
+      renderSentence();
+    } else {
+      ui.hintDisplay.innerHTML = '';
+    }
   });
 
   // Help modal

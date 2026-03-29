@@ -814,7 +814,13 @@
       ui.shareCode.value = roomId;
       ui.lobbyShare.style.display = '';
       ui.slotP1.classList.add('slot-connected');
-      ui.slotP1.querySelector('.slot-name').innerHTML = `${playerName} <span class="slot-tag">(Host)</span>`;
+      const nameEl = ui.slotP1.querySelector('.slot-name');
+      nameEl.textContent = '';
+      nameEl.appendChild(document.createTextNode(playerName + ' '));
+      const tag = document.createElement('span');
+      tag.className = 'slot-tag';
+      tag.textContent = '(Host)';
+      nameEl.appendChild(tag);
       ui.slotP1Loadout.textContent = selectedLoadout;
       ui.lobbyStatus.textContent = 'Waiting for opponent to join...';
     };
@@ -864,7 +870,7 @@
   function handleNetMessage(data) {
     switch (data.type) {
       case 'player-info': {
-        opponentName = data.name || 'Opponent';
+        opponentName = (typeof data.name === 'string' ? data.name : '').trim().substring(0, 16) || 'Opponent';
         // Update opponent slot in lobby
         const oppSlot = net.role === 'host' ? ui.slotP2 : ui.slotP1;
         oppSlot.querySelector('.slot-name').textContent = opponentName;
@@ -1260,7 +1266,7 @@
   });
 
   function getPlayerName() {
-    const name = ui.inputPlayerName.value.trim();
+    const name = ui.inputPlayerName.value.trim().substring(0, 16);
     playerName = name || 'Player';
     return playerName;
   }

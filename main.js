@@ -61,6 +61,10 @@
     gameoverTitle: $('gameover-title'),
     gameoverStats: $('gameover-stats'),
     btnMenu: $('btn-menu'),
+    // Help
+    btnHelp: $('btn-help'),
+    helpModal: $('help-modal'),
+    btnHelpClose: $('btn-help-close'),
   };
 
   const typingInput = $('typing-input');
@@ -1344,6 +1348,19 @@
     ui.btnReady.style.opacity = '';
     showScreen('menu');
     setStatus('');
+  });
+
+  // Help modal
+  ui.btnHelp.addEventListener('click', () => {
+    ui.helpModal.style.display = 'flex';
+  });
+
+  ui.btnHelpClose.addEventListener('click', () => {
+    ui.helpModal.style.display = 'none';
+  });
+
+  ui.helpModal.addEventListener('click', (e) => {
+    if (e.target === ui.helpModal) ui.helpModal.style.display = 'none';
   });
 
   // Periodic state sync

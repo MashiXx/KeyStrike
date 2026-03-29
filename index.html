@@ -58,6 +58,72 @@
       </div>
       <div id="menu-status" class="status-text"></div>
     </div>
+    <button id="btn-help" class="btn-help" title="Hướng dẫn gõ 10 ngón">?</button>
+  </div>
+
+  <!-- Help Modal -->
+  <div id="help-modal" class="help-modal" style="display:none;">
+    <div class="help-content">
+      <button id="btn-help-close" class="help-close">&times;</button>
+      <h2 class="help-title">Hướng Dẫn Gõ <span class="accent">10 Ngón</span></h2>
+
+      <div class="help-keyboard">
+        <pre class="keyboard-diagram">
+┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+│  Q  │  W  │  E  │  R  │  T  │  Y  │  U  │  I  │  O  │  P  │
+│ <span class="finger-pink-l">út T</span> │<span class="finger-ring-l">áp T</span>│<span class="finger-mid-l">giữaT</span>│<span class="finger-idx-l">trỏ T</span>│<span class="finger-idx-l">trỏ T</span>│<span class="finger-idx-r">trỏ P</span>│<span class="finger-idx-r">trỏ P</span>│<span class="finger-mid-r">giữaP</span>│<span class="finger-ring-r">áp P</span>│ <span class="finger-pink-r">út P</span> │
+├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+│  A  │  S  │  D  │  F  │  G  │  H  │  J  │  K  │  L  │  ;  │
+│ <span class="finger-pink-l">út T</span> │<span class="finger-ring-l">áp T</span>│<span class="finger-mid-l">giữaT</span>│<span class="finger-idx-l">trỏ T</span>│<span class="finger-idx-l">trỏ T</span>│<span class="finger-idx-r">trỏ P</span>│<span class="finger-idx-r">trỏ P</span>│<span class="finger-mid-r">giữaP</span>│<span class="finger-ring-r">áp P</span>│ <span class="finger-pink-r">út P</span> │
+├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+│  Z  │  X  │  C  │  V  │  B  │  N  │  M  │  ,  │  .  │  /  │
+│ <span class="finger-pink-l">út T</span> │<span class="finger-ring-l">áp T</span>│<span class="finger-mid-l">giữaT</span>│<span class="finger-idx-l">trỏ T</span>│<span class="finger-idx-l">trỏ T</span>│<span class="finger-idx-r">trỏ P</span>│<span class="finger-idx-r">trỏ P</span>│<span class="finger-mid-r">giữaP</span>│<span class="finger-ring-r">áp P</span>│ <span class="finger-pink-r">út P</span> │
+└─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
+├──── <span class="finger-pink-l">Tay trái</span> ──────────────┤├────────────── <span class="finger-pink-r">Tay phải</span> ────┤
+                    ┌───────────────────────┐
+                    │      Space Bar        │
+                    │     (ngón cái)        │
+                    └───────────────────────┘</pre>
+      </div>
+
+      <div class="help-sections">
+        <div class="help-section">
+          <h3>Vị trí ngón tay cơ bản (Home Row)</h3>
+          <p>Đặt các ngón tay lên hàng giữa của bàn phím:</p>
+          <ul>
+            <li><span class="finger-pink-l">Tay trái:</span> Út → <b>A</b>, Áp út → <b>S</b>, Giữa → <b>D</b>, Trỏ → <b>F</b></li>
+            <li><span class="finger-pink-r">Tay phải:</span> Trỏ → <b>J</b>, Giữa → <b>K</b>, Áp út → <b>L</b>, Út → <b>;</b></li>
+            <li>Hai ngón cái đặt trên <b>phím cách (Space)</b></li>
+            <li>Phím <b>F</b> và <b>J</b> có gờ nổi để bạn nhận biết vị trí mà không cần nhìn</li>
+          </ul>
+        </div>
+
+        <div class="help-section">
+          <h3>Phân chia ngón tay</h3>
+          <ul>
+            <li><span class="finger-pink-l">Ngón út trái:</span> Q, A, Z, 1, !</li>
+            <li><span class="finger-ring-l">Ngón áp út trái:</span> W, S, X, 2, @</li>
+            <li><span class="finger-mid-l">Ngón giữa trái:</span> E, D, C, 3, #</li>
+            <li><span class="finger-idx-l">Ngón trỏ trái:</span> R, T, F, G, V, B, 4, 5</li>
+            <li><span class="finger-idx-r">Ngón trỏ phải:</span> Y, U, H, J, N, M, 6, 7</li>
+            <li><span class="finger-mid-r">Ngón giữa phải:</span> I, K, , (dấu phẩy), 8</li>
+            <li><span class="finger-ring-r">Ngón áp út phải:</span> O, L, . (dấu chấm), 9</li>
+            <li><span class="finger-pink-r">Ngón út phải:</span> P, ;, /, 0, và các phím đặc biệt</li>
+          </ul>
+        </div>
+
+        <div class="help-section">
+          <h3>Mẹo luyện tập</h3>
+          <ul>
+            <li><b>Không nhìn bàn phím</b> — tập "gõ mù" để tăng tốc độ</li>
+            <li><b>Luôn quay về Home Row</b> sau mỗi lần gõ phím</li>
+            <li><b>Ưu tiên độ chính xác</b> hơn tốc độ — tốc độ sẽ đến tự nhiên</li>
+            <li><b>Giữ tư thế thoải mái</b> — cổ tay thẳng, vai thả lỏng</li>
+            <li><b>Luyện tập đều đặn</b> — 15-20 phút mỗi ngày hiệu quả hơn 2 giờ một lần</li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Lobby Screen -->

@@ -51,6 +51,7 @@ body {
 /* Menu */
 .menu-container {
   text-align: center;
+  position: relative;
 }
 
 .game-title {
@@ -855,6 +856,170 @@ body {
   margin-bottom: 2rem;
   white-space: pre-line;
 }
+
+/* Help Button */
+.btn-help {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #333;
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-help:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 15px var(--accent-glow);
+  color: var(--accent);
+}
+
+/* Help Modal */
+.help-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: help-fade-in 0.2s ease;
+}
+
+@keyframes help-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.help-content {
+  background: var(--bg-surface);
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 720px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.help-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.help-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.help-content::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+.help-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 2rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.help-close:hover {
+  color: var(--accent);
+}
+
+.help-title {
+  font-size: 1.5rem;
+  color: var(--text);
+  margin-bottom: 1.5rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.help-keyboard {
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+
+.keyboard-diagram {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: var(--text-dim);
+  text-align: center;
+  white-space: pre;
+}
+
+.help-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.help-section {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+
+.help-section h3 {
+  color: var(--accent);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+}
+
+.help-section p {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.help-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.help-section li {
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 0.25rem 0;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.help-section li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+
+/* Finger color coding */
+.finger-pink-l { color: #ff6b9d; }
+.finger-ring-l { color: #c490e4; }
+.finger-mid-l { color: #64b5f6; }
+.finger-idx-l { color: #81c784; }
+.finger-idx-r { color: #fff176; }
+.finger-mid-r { color: #ffb74d; }
+.finger-ring-r { color: #f06292; }
+.finger-pink-r { color: #ce93d8; }
 
 /* Responsive */
 @media (max-width: 700px) {

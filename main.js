@@ -550,6 +550,12 @@
       const arcHeight = p.gravity * progress * (1 - progress);
       p.y = linearY - arcHeight;
 
+      // Store previous position for angle calculation
+      p.prevX = p.prevX === undefined ? p.x : p.curX;
+      p.prevY = p.prevY === undefined ? p.y : p.curY;
+      p.curX = p.x;
+      p.curY = p.y;
+
       // Trail
       if (p.trail) {
         p.trail.push({ x: p.x, y: p.y, alpha: 1 });
@@ -580,8 +586,6 @@
 
       // Draw projectile body
       ctx.save();
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.def.radius, 0, Math.PI * 2);
 
       // Glow for critical
       if (p.isCritical) {
@@ -589,14 +593,80 @@
         ctx.shadowColor = '#ffc107';
       }
 
-      ctx.fillStyle = p.def.color;
-      ctx.fill();
+      const r = p.def.radius;
+      const angle = Math.atan2(
+        (p.curY || p.y) - (p.prevY || p.y),
+        (p.curX || p.x) - (p.prevX || p.x)
+      );
 
-      // Inner highlight
-      ctx.beginPath();
-      ctx.arc(p.x - 2, p.y - 2, p.def.radius * 0.4, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.fill();
+      if (p.type === 'rocket' || p.type === 'bomb' || p.type === 'freeze') {
+        // Rocket shape for powerful projectiles
+        ctx.translate(p.x, p.y);
+        ctx.rotate(angle);
+        ctx.scale(1.3, 1.3);
+
+        // Rocket body
+        ctx.beginPath();
+        ctx.moveTo(r * 1.2, 0);             // nose
+        ctx.lineTo(-r * 0.8, -r * 0.45);    // top-back
+        ctx.lineTo(-r * 0.5, 0);            // indent
+        ctx.lineTo(-r * 0.8, r * 0.45);     // bottom-back
+        ctx.closePath();
+        ctx.fillStyle = p.def.color;
+        ctx.fill();
+
+        // Flame exhaust
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.5, -r * 0.25);
+        ctx.lineTo(-r * 1.3, 0);
+        ctx.lineTo(-r * 0.5, r * 0.25);
+        ctx.closePath();
+        ctx.fillStyle = '#ff6600';
+        ctx.fill();
+
+        // Window/highlight
+        ctx.beginPath();
+        ctx.arc(r * 0.2, 0, r * 0.18, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fill();
+      } else {
+        // Arrow shape for normal projectiles
+        ctx.translate(p.x, p.y);
+        ctx.rotate(angle);
+        ctx.scale(1.3, 1.3);
+
+        // Arrow shaft
+        ctx.beginPath();
+        ctx.rect(-r * 0.9, -r * 0.12, r * 1.5, r * 0.24);
+        ctx.fillStyle = '#8d6e3f';
+        ctx.fill();
+
+        // Arrowhead
+        ctx.beginPath();
+        ctx.moveTo(r * 1.2, 0);
+        ctx.lineTo(r * 0.5, -r * 0.45);
+        ctx.lineTo(r * 0.5, r * 0.45);
+        ctx.closePath();
+        ctx.fillStyle = p.def.color;
+        ctx.fill();
+
+        // Fletching (tail feathers)
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.9, -r * 0.12);
+        ctx.lineTo(-r * 1.2, -r * 0.4);
+        ctx.lineTo(-r * 0.6, -r * 0.12);
+        ctx.closePath();
+        ctx.fillStyle = '#cc3333';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.9, r * 0.12);
+        ctx.lineTo(-r * 1.2, r * 0.4);
+        ctx.lineTo(-r * 0.6, r * 0.12);
+        ctx.closePath();
+        ctx.fillStyle = '#cc3333';
+        ctx.fill();
+      }
 
       ctx.restore();
     }

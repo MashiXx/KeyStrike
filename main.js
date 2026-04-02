@@ -1270,12 +1270,12 @@
     }
   }
 
-  // Overload on Ctrl+Space (since Space may be part of sentence)
+  // Overload on Enter or F1
   document.addEventListener('keydown', (e) => {
     if (!game || !game.active) return;
 
-    // Overload: Ctrl+Space or F1
-    if ((e.key === ' ' && e.ctrlKey) || e.key === 'F1') {
+    // Overload: Enter or F1
+    if (e.key === 'Enter' || e.key === 'F1') {
       e.preventDefault();
       if (game.self.energy >= 100) {
         const projectiles = game.triggerOverload();
